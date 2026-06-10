@@ -15,7 +15,11 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppWalletRouteImport } from './routes/app.wallet'
+import { Route as AppProfileRouteImport } from './routes/app.profile'
+import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
+import { Route as AppChatRouteImport } from './routes/app.chat'
 import { Route as AppAgentRouteImport } from './routes/app.agent'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as AppTasksIndexRouteImport } from './routes/app.tasks.index'
 import { Route as AppTasksNewRouteImport } from './routes/app.tasks.new'
 import { Route as AppTasksIdRouteImport } from './routes/app.tasks.$id'
@@ -50,9 +54,29 @@ const AppWalletRoute = AppWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChatRoute = AppChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppAgentRoute = AppAgentRouteImport.update({
   id: '/agent',
   path: '/agent',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
@@ -76,7 +100,11 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/agent': typeof AppAgentRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/notifications': typeof AppNotificationsRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/wallet': typeof AppWalletRoute
   '/app/': typeof AppIndexRoute
   '/app/tasks/$id': typeof AppTasksIdRoute
@@ -87,7 +115,11 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/agent': typeof AppAgentRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/notifications': typeof AppNotificationsRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/wallet': typeof AppWalletRoute
   '/app': typeof AppIndexRoute
   '/app/tasks/$id': typeof AppTasksIdRoute
@@ -100,7 +132,11 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/app/admin': typeof AppAdminRoute
   '/app/agent': typeof AppAgentRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/notifications': typeof AppNotificationsRoute
+  '/app/profile': typeof AppProfileRoute
   '/app/wallet': typeof AppWalletRoute
   '/app/': typeof AppIndexRoute
   '/app/tasks/$id': typeof AppTasksIdRoute
@@ -114,7 +150,11 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/register'
+    | '/app/admin'
     | '/app/agent'
+    | '/app/chat'
+    | '/app/notifications'
+    | '/app/profile'
     | '/app/wallet'
     | '/app/'
     | '/app/tasks/$id'
@@ -125,7 +165,11 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/app/admin'
     | '/app/agent'
+    | '/app/chat'
+    | '/app/notifications'
+    | '/app/profile'
     | '/app/wallet'
     | '/app'
     | '/app/tasks/$id'
@@ -137,7 +181,11 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/register'
+    | '/app/admin'
     | '/app/agent'
+    | '/app/chat'
+    | '/app/notifications'
+    | '/app/profile'
     | '/app/wallet'
     | '/app/'
     | '/app/tasks/$id'
@@ -196,11 +244,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWalletRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/profile': {
+      id: '/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/notifications': {
+      id: '/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/chat': {
+      id: '/app/chat'
+      path: '/chat'
+      fullPath: '/app/chat'
+      preLoaderRoute: typeof AppChatRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/agent': {
       id: '/app/agent'
       path: '/agent'
       fullPath: '/app/agent'
       preLoaderRoute: typeof AppAgentRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/tasks/': {
@@ -228,7 +304,11 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppAgentRoute: typeof AppAgentRoute
+  AppChatRoute: typeof AppChatRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
+  AppProfileRoute: typeof AppProfileRoute
   AppWalletRoute: typeof AppWalletRoute
   AppIndexRoute: typeof AppIndexRoute
   AppTasksIdRoute: typeof AppTasksIdRoute
@@ -237,7 +317,11 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppAgentRoute: AppAgentRoute,
+  AppChatRoute: AppChatRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
+  AppProfileRoute: AppProfileRoute,
   AppWalletRoute: AppWalletRoute,
   AppIndexRoute: AppIndexRoute,
   AppTasksIdRoute: AppTasksIdRoute,
