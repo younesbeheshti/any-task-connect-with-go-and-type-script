@@ -11,7 +11,14 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppWalletRouteImport } from './routes/app.wallet'
+import { Route as AppAgentRouteImport } from './routes/app.agent'
+import { Route as AppTasksIndexRouteImport } from './routes/app.tasks.index'
+import { Route as AppTasksNewRouteImport } from './routes/app.tasks.new'
+import { Route as AppTasksIdRouteImport } from './routes/app.tasks.$id'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
@@ -23,38 +30,124 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWalletRoute = AppWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentRoute = AppAgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
+  id: '/tasks/',
+  path: '/tasks/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksNewRoute = AppTasksNewRouteImport.update({
+  id: '/tasks/new',
+  path: '/tasks/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksIdRoute = AppTasksIdRouteImport.update({
+  id: '/tasks/$id',
+  path: '/tasks/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/app/agent': typeof AppAgentRoute
+  '/app/wallet': typeof AppWalletRoute
+  '/app/': typeof AppIndexRoute
+  '/app/tasks/$id': typeof AppTasksIdRoute
+  '/app/tasks/new': typeof AppTasksNewRoute
+  '/app/tasks/': typeof AppTasksIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/app/agent': typeof AppAgentRoute
+  '/app/wallet': typeof AppWalletRoute
+  '/app': typeof AppIndexRoute
+  '/app/tasks/$id': typeof AppTasksIdRoute
+  '/app/tasks/new': typeof AppTasksNewRoute
+  '/app/tasks': typeof AppTasksIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/app/agent': typeof AppAgentRoute
+  '/app/wallet': typeof AppWalletRoute
+  '/app/': typeof AppIndexRoute
+  '/app/tasks/$id': typeof AppTasksIdRoute
+  '/app/tasks/new': typeof AppTasksNewRoute
+  '/app/tasks/': typeof AppTasksIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/register'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/login'
+    | '/register'
+    | '/app/agent'
+    | '/app/wallet'
+    | '/app/'
+    | '/app/tasks/$id'
+    | '/app/tasks/new'
+    | '/app/tasks/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/register'
-  id: '__root__' | '/' | '/login' | '/register'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/app/agent'
+    | '/app/wallet'
+    | '/app'
+    | '/app/tasks/$id'
+    | '/app/tasks/new'
+    | '/app/tasks'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/login'
+    | '/register'
+    | '/app/agent'
+    | '/app/wallet'
+    | '/app/'
+    | '/app/tasks/$id'
+    | '/app/tasks/new'
+    | '/app/tasks/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
 }
@@ -75,6 +168,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -82,11 +182,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/wallet': {
+      id: '/app/wallet'
+      path: '/wallet'
+      fullPath: '/app/wallet'
+      preLoaderRoute: typeof AppWalletRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/agent': {
+      id: '/app/agent'
+      path: '/agent'
+      fullPath: '/app/agent'
+      preLoaderRoute: typeof AppAgentRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tasks/': {
+      id: '/app/tasks/'
+      path: '/tasks'
+      fullPath: '/app/tasks/'
+      preLoaderRoute: typeof AppTasksIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tasks/new': {
+      id: '/app/tasks/new'
+      path: '/tasks/new'
+      fullPath: '/app/tasks/new'
+      preLoaderRoute: typeof AppTasksNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tasks/$id': {
+      id: '/app/tasks/$id'
+      path: '/tasks/$id'
+      fullPath: '/app/tasks/$id'
+      preLoaderRoute: typeof AppTasksIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAgentRoute: typeof AppAgentRoute
+  AppWalletRoute: typeof AppWalletRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppTasksIdRoute: typeof AppTasksIdRoute
+  AppTasksNewRoute: typeof AppTasksNewRoute
+  AppTasksIndexRoute: typeof AppTasksIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAgentRoute: AppAgentRoute,
+  AppWalletRoute: AppWalletRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppTasksIdRoute: AppTasksIdRoute,
+  AppTasksNewRoute: AppTasksNewRoute,
+  AppTasksIndexRoute: AppTasksIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
 }
