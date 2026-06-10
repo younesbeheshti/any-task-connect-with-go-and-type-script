@@ -57,7 +57,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
             return (
               <Link
                 key={item.to}
-                to={item.to}
+                to={item.to as any}
                 onClick={onClose}
                 className={cn(
                   "group flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
