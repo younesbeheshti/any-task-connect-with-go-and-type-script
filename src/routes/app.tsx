@@ -10,7 +10,8 @@ export const Route = createFileRoute("/app")({
   component: AppShell,
 });
 
-const nav = [
+type NavItem = { to: string; label: string; icon: any; end?: boolean; badge?: number };
+const nav: NavItem[] = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/app/tasks", label: "Marketplace", icon: ListChecks },
   { to: "/app/tasks/new", label: "Create Task", icon: PlusCircle },
@@ -20,7 +21,7 @@ const nav = [
   { to: "/app/notifications", label: "Notifications", icon: Bell, badge: 3 },
   { to: "/app/profile", label: "Profile", icon: User },
   { to: "/app/admin", label: "Admin", icon: Shield },
-] as const;
+];
 
 function AppShell() {
   const [open, setOpen] = useState(false);
