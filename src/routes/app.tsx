@@ -66,7 +66,7 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
               >
                 <item.icon className={cn("h-4 w-4", active && "text-primary")} />
                 <span className="flex-1">{item.label}</span>
-                {"badge" in item && item.badge && (
+                {item.badge && (
                   <span className="rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">{item.badge}</span>
                 )}
               </Link>
