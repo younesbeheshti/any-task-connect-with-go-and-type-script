@@ -9,38 +9,240 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppWalletRouteImport } from './routes/app.wallet'
+import { Route as AppProfileRouteImport } from './routes/app.profile'
+import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
+import { Route as AppChatRouteImport } from './routes/app.chat'
+import { Route as AppAgentRouteImport } from './routes/app.agent'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
+import { Route as AppTasksIndexRouteImport } from './routes/app.tasks.index'
+import { Route as AppTasksNewRouteImport } from './routes/app.tasks.new'
+import { Route as AppTasksIdRouteImport } from './routes/app.tasks.$id'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppWalletRoute = AppWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChatRoute = AppChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAgentRoute = AppAgentRouteImport.update({
+  id: '/agent',
+  path: '/agent',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
+  id: '/tasks/',
+  path: '/tasks/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksNewRoute = AppTasksNewRouteImport.update({
+  id: '/tasks/new',
+  path: '/tasks/new',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksIdRoute = AppTasksIdRouteImport.update({
+  id: '/tasks/$id',
+  path: '/tasks/$id',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/app/admin': typeof AppAdminRoute
+  '/app/agent': typeof AppAgentRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/notifications': typeof AppNotificationsRoute
+  '/app/profile': typeof AppProfileRoute
+  '/app/wallet': typeof AppWalletRoute
+  '/app/': typeof AppIndexRoute
+  '/app/tasks/$id': typeof AppTasksIdRoute
+  '/app/tasks/new': typeof AppTasksNewRoute
+  '/app/tasks/': typeof AppTasksIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/app/admin': typeof AppAdminRoute
+  '/app/agent': typeof AppAgentRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/notifications': typeof AppNotificationsRoute
+  '/app/profile': typeof AppProfileRoute
+  '/app/wallet': typeof AppWalletRoute
+  '/app': typeof AppIndexRoute
+  '/app/tasks/$id': typeof AppTasksIdRoute
+  '/app/tasks/new': typeof AppTasksNewRoute
+  '/app/tasks': typeof AppTasksIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/app/admin': typeof AppAdminRoute
+  '/app/agent': typeof AppAgentRoute
+  '/app/chat': typeof AppChatRoute
+  '/app/notifications': typeof AppNotificationsRoute
+  '/app/profile': typeof AppProfileRoute
+  '/app/wallet': typeof AppWalletRoute
+  '/app/': typeof AppIndexRoute
+  '/app/tasks/$id': typeof AppTasksIdRoute
+  '/app/tasks/new': typeof AppTasksNewRoute
+  '/app/tasks/': typeof AppTasksIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/login'
+    | '/register'
+    | '/sitemap.xml'
+    | '/app/admin'
+    | '/app/agent'
+    | '/app/chat'
+    | '/app/notifications'
+    | '/app/profile'
+    | '/app/wallet'
+    | '/app/'
+    | '/app/tasks/$id'
+    | '/app/tasks/new'
+    | '/app/tasks/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/sitemap.xml'
+    | '/app/admin'
+    | '/app/agent'
+    | '/app/chat'
+    | '/app/notifications'
+    | '/app/profile'
+    | '/app/wallet'
+    | '/app'
+    | '/app/tasks/$id'
+    | '/app/tasks/new'
+    | '/app/tasks'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/login'
+    | '/register'
+    | '/sitemap.xml'
+    | '/app/admin'
+    | '/app/agent'
+    | '/app/chat'
+    | '/app/notifications'
+    | '/app/profile'
+    | '/app/wallet'
+    | '/app/'
+    | '/app/tasks/$id'
+    | '/app/tasks/new'
+    | '/app/tasks/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +250,114 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/wallet': {
+      id: '/app/wallet'
+      path: '/wallet'
+      fullPath: '/app/wallet'
+      preLoaderRoute: typeof AppWalletRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/profile': {
+      id: '/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/notifications': {
+      id: '/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/chat': {
+      id: '/app/chat'
+      path: '/chat'
+      fullPath: '/app/chat'
+      preLoaderRoute: typeof AppChatRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/agent': {
+      id: '/app/agent'
+      path: '/agent'
+      fullPath: '/app/agent'
+      preLoaderRoute: typeof AppAgentRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tasks/': {
+      id: '/app/tasks/'
+      path: '/tasks'
+      fullPath: '/app/tasks/'
+      preLoaderRoute: typeof AppTasksIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tasks/new': {
+      id: '/app/tasks/new'
+      path: '/tasks/new'
+      fullPath: '/app/tasks/new'
+      preLoaderRoute: typeof AppTasksNewRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tasks/$id': {
+      id: '/app/tasks/$id'
+      path: '/tasks/$id'
+      fullPath: '/app/tasks/$id'
+      preLoaderRoute: typeof AppTasksIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
+  AppAgentRoute: typeof AppAgentRoute
+  AppChatRoute: typeof AppChatRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
+  AppProfileRoute: typeof AppProfileRoute
+  AppWalletRoute: typeof AppWalletRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppTasksIdRoute: typeof AppTasksIdRoute
+  AppTasksNewRoute: typeof AppTasksNewRoute
+  AppTasksIndexRoute: typeof AppTasksIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
+  AppAgentRoute: AppAgentRoute,
+  AppChatRoute: AppChatRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
+  AppProfileRoute: AppProfileRoute,
+  AppWalletRoute: AppWalletRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppTasksIdRoute: AppTasksIdRoute,
+  AppTasksNewRoute: AppTasksNewRoute,
+  AppTasksIndexRoute: AppTasksIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
