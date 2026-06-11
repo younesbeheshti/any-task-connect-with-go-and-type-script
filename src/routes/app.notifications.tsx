@@ -4,18 +4,18 @@ import { notifications } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/notifications")({
-  head: () => ({ meta: [{ title: "Notifications — TaskBridge" }] }),
+  head: () => ({ meta: [{ title: "اعلان‌ها — تسک‌بریج" }] }),
   component: Notifications,
 });
 
 const iconFor = (type: string) => {
   switch (type) {
-    case "task_assigned": return ClipboardList;
+    case "task_assigned":  return ClipboardList;
     case "task_completed": return CheckCheck;
-    case "payment": return CreditCard;
-    case "application": return UserPlus;
-    case "message": return MessagesSquare;
-    default: return Bell;
+    case "payment":        return CreditCard;
+    case "application":    return UserPlus;
+    case "message":        return MessagesSquare;
+    default:               return Bell;
   }
 };
 
@@ -24,14 +24,14 @@ function Notifications() {
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Notifications</h1>
-          <p className="text-sm text-muted-foreground">Stay on top of every task event.</p>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">اعلان‌ها</h1>
+          <p className="text-sm text-muted-foreground">از تمامی رویدادهای درخواست‌های خود مطلع باشید.</p>
         </div>
-        <button className="rounded-lg border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent">Mark all as read</button>
+        <button className="rounded-lg border bg-card px-3 py-1.5 text-xs font-medium hover:bg-accent">علامت‌گذاری همه به‌عنوان خوانده‌شده</button>
       </div>
 
-      <div className="flex gap-2 text-sm">
-        {["All", "Unread", "Tasks", "Payments", "Messages"].map((t, i) => (
+      <div className="flex flex-wrap gap-2 text-sm">
+        {["همه", "خوانده‌نشده", "درخواست‌ها", "پرداخت‌ها", "پیام‌ها"].map((t, i) => (
           <button key={t} className={cn("rounded-full px-3 py-1.5 font-medium", i === 0 ? "bg-primary text-primary-foreground" : "border bg-card text-muted-foreground hover:bg-accent")}>{t}</button>
         ))}
       </div>
@@ -53,7 +53,7 @@ function Notifications() {
                     </div>
                     <div className="mt-0.5 text-sm text-muted-foreground">{n.desc}</div>
                   </div>
-                  <div className="shrink-0 text-xs text-muted-foreground">{n.time}</div>
+                  <div className="shrink-0 text-xs text-muted-foreground whitespace-nowrap">{n.time}</div>
                 </li>
               );
             })}
@@ -68,8 +68,8 @@ function Empty() {
   return (
     <div className="flex flex-col items-center px-6 py-16 text-center">
       <BellOff className="h-10 w-10 text-muted-foreground" />
-      <h3 className="mt-4 font-semibold">You're all caught up</h3>
-      <p className="mt-1 text-sm text-muted-foreground">New notifications will appear here.</p>
+      <h3 className="mt-4 font-semibold">اعلان جدیدی ندارید</h3>
+      <p className="mt-1 text-sm text-muted-foreground">اعلان‌های جدید در اینجا نمایش داده می‌شوند.</p>
     </div>
   );
 }
