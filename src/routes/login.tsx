@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Phone, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { toast } from "sonner";
+import { toFa } from "@/lib/fa";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Sign in — TaskBridge" }] }),
+  head: () => ({ meta: [{ title: "ورود — تسک‌بریج" }] }),
   component: Login,
 });
 
@@ -17,17 +18,17 @@ function Login() {
       <div className="flex flex-col px-6 py-8 sm:px-10">
         <Logo />
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
-          <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
-          <p className="mt-2 text-sm text-muted-foreground">Sign in to manage your tasks and agents.</p>
+          <h1 className="text-3xl font-bold tracking-tight">خوش آمدید</h1>
+          <p className="mt-2 text-sm text-muted-foreground">برای مدیریت درخواست‌ها و انجام‌دهنده‌های خود وارد شوید.</p>
           <form
-            onSubmit={(e) => { e.preventDefault(); toast.success("Signed in"); nav({ to: "/app" }); }}
+            onSubmit={(e) => { e.preventDefault(); toast.success("با موفقیت وارد شدید"); nav({ to: "/app" }); }}
             className="mt-8 space-y-4"
           >
-            <Field icon={Mail} type="email" label="Email" placeholder="you@example.com" />
+            <Field icon={Phone} type="tel" label="شماره موبایل" placeholder={toFa("09120000000")} dir="ltr" />
             <Field
               icon={Lock}
               type={show ? "text" : "password"}
-              label="Password"
+              label="رمز عبور"
               placeholder="••••••••"
               trailing={
                 <button type="button" onClick={() => setShow(s => !s)} className="text-muted-foreground hover:text-foreground">
@@ -38,17 +39,17 @@ function Login() {
             <div className="flex items-center justify-between text-sm">
               <label className="flex items-center gap-2 text-muted-foreground">
                 <input type="checkbox" className="h-4 w-4 rounded border-input text-primary focus:ring-primary" />
-                Remember me
+                مرا به خاطر بسپار
               </label>
-              <a href="#" className="font-medium text-primary hover:underline">Forgot password?</a>
+              <a href="#" className="font-medium text-primary hover:underline">فراموشی رمز عبور؟</a>
             </div>
             <button className="inline-flex w-full items-center justify-center gap-2 rounded-lg gradient-brand py-2.5 text-sm font-semibold text-white shadow-soft hover:opacity-95">
-              Sign in <ArrowRight className="h-4 w-4" />
+              ورود <ArrowLeft className="h-4 w-4" />
             </button>
           </form>
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            New to TaskBridge?{" "}
-            <Link to="/register" className="font-medium text-primary hover:underline">Create an account</Link>
+            تازه به تسک‌بریج پیوسته‌اید؟{" "}
+            <Link to="/register" className="font-medium text-primary hover:underline">ساخت حساب کاربری</Link>
           </div>
         </div>
       </div>
@@ -78,16 +79,16 @@ export function AuthAside() {
       <div className="relative flex h-full flex-col justify-between p-12 text-white">
         <div className="flex items-center gap-2 text-sm font-medium opacity-80">
           <span className="h-1.5 w-1.5 rounded-full bg-white" />
-          Live · 12 cities · 9 countries
+          فعال در {toFa(10)} شهر بزرگ ایران
         </div>
         <div>
-          <p className="font-display text-4xl font-bold leading-tight">"TaskBridge feels like having a trusted friend in every city."</p>
-          <p className="mt-6 text-sm opacity-80">— Leyla Hashemi, Product Designer</p>
+          <p className="font-display text-3xl font-bold leading-relaxed">«تسک‌بریج مثل داشتن یه آشنای مطمئن توی هر شهره.»</p>
+          <p className="mt-6 text-sm opacity-80">— لیلا هاشمی، طراح محصول</p>
         </div>
         <div className="grid grid-cols-3 gap-6 border-t border-white/15 pt-8 text-sm">
-          <div><div className="font-display text-2xl font-bold">12k+</div><div className="opacity-70">Tasks completed</div></div>
-          <div><div className="font-display text-2xl font-bold">4.9</div><div className="opacity-70">Avg rating</div></div>
-          <div><div className="font-display text-2xl font-bold">$0</div><div className="opacity-70">Fraud loss</div></div>
+          <div><div className="font-display text-2xl font-bold tabular-nums">{toFa("12k+")}</div><div className="opacity-70">درخواست انجام‌شده</div></div>
+          <div><div className="font-display text-2xl font-bold tabular-nums">{toFa("4.9")}</div><div className="opacity-70">میانگین امتیاز</div></div>
+          <div><div className="font-display text-2xl font-bold tabular-nums">۱۰۰٪</div><div className="opacity-70">تضمین بازگشت وجه</div></div>
         </div>
       </div>
     </div>

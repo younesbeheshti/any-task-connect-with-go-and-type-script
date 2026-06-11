@@ -2,29 +2,30 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Users, ClipboardList, Wallet, TrendingUp, AlertTriangle, MoreHorizontal } from "lucide-react";
 import { tasks } from "@/lib/mock-data";
 import { StatusBadge } from "@/components/status-badge";
+import { toman, toFa } from "@/lib/fa";
 
 export const Route = createFileRoute("/app/admin")({
-  head: () => ({ meta: [{ title: "Admin — TaskBridge" }] }),
+  head: () => ({ meta: [{ title: "مدیریت — تسک‌بریج" }] }),
   component: Admin,
 });
 
 function Admin() {
   const kpis = [
-    { label: "Total Users", value: "18,402", trend: "+5.2%", icon: Users },
-    { label: "Active Tasks", value: "847", trend: "+12%", icon: ClipboardList },
-    { label: "Monthly Revenue", value: "$92,140", trend: "+8.4%", icon: Wallet },
-    { label: "Disputes Open", value: "6", trend: "-2", icon: AlertTriangle, danger: true },
+    { label: "تعداد کاربران",        value: toFa("18,402".replace(/,/g, "٬")),  trend: "+۵٫۲٪", icon: Users },
+    { label: "درخواست‌های فعال",     value: toFa(847),                            trend: "+۱۲٪",   icon: ClipboardList },
+    { label: "درآمد ماهانه",         value: toman(9214000000),                    trend: "+۸٫۴٪",  icon: Wallet, big: true },
+    { label: "اعتراضات باز",         value: toFa(6),                              trend: "-۲",     icon: AlertTriangle, danger: true },
   ];
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Admin overview</h1>
-          <p className="text-sm text-muted-foreground">Platform health at a glance.</p>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">پنل مدیریت</h1>
+          <p className="text-sm text-muted-foreground">وضعیت سلامت پلتفرم در یک نگاه.</p>
         </div>
         <div className="flex gap-2">
-          <button className="rounded-lg border bg-card px-3.5 py-2 text-sm font-medium hover:bg-accent">Export</button>
-          <button className="rounded-lg gradient-brand px-3.5 py-2 text-sm font-semibold text-white hover:opacity-95">Generate report</button>
+          <button className="rounded-lg border bg-card px-3.5 py-2 text-sm font-medium hover:bg-accent">خروجی Excel</button>
+          <button className="rounded-lg gradient-brand px-3.5 py-2 text-sm font-semibold text-white hover:opacity-95">گزارش جدید</button>
         </div>
       </div>
 
@@ -35,7 +36,7 @@ function Admin() {
               <span className="text-sm text-muted-foreground">{k.label}</span>
               <span className={`grid h-9 w-9 place-items-center rounded-lg ${k.danger ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"}`}><k.icon className="h-4 w-4" /></span>
             </div>
-            <div className="mt-3 font-display text-3xl font-bold">{k.value}</div>
+            <div className={`mt-3 font-display font-bold tabular-nums ${k.big ? "text-xl" : "text-3xl"}`}>{k.value}</div>
             <div className={`mt-1 inline-flex items-center gap-1 text-xs ${k.danger ? "text-destructive" : "text-success"}`}>
               <TrendingUp className="h-3 w-3" /> {k.trend}
             </div>
@@ -45,23 +46,23 @@ function Admin() {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="rounded-2xl border bg-card p-5 shadow-soft lg:col-span-2">
-          <h2 className="font-display font-semibold">Revenue (last 30 days)</h2>
+          <h2 className="font-display font-semibold">روند درآمد (۳۰ روز اخیر)</h2>
           <BigChart />
         </div>
         <div className="rounded-2xl border bg-card p-5 shadow-soft">
-          <h2 className="font-display font-semibold">Top cities</h2>
+          <h2 className="font-display font-semibold">شهرهای برتر</h2>
           <div className="mt-4 space-y-3">
             {[
-              { city: "Tehran", pct: 92, value: "$24,310" },
-              { city: "Istanbul", pct: 74, value: "$18,820" },
-              { city: "Dubai", pct: 58, value: "$14,210" },
-              { city: "Madrid", pct: 42, value: "$10,940" },
-              { city: "Berlin", pct: 30, value: "$8,160" },
+              { city: "تهران",   pct: 92, value: 2431000000 },
+              { city: "مشهد",    pct: 74, value: 1882000000 },
+              { city: "اصفهان",  pct: 58, value: 1421000000 },
+              { city: "شیراز",   pct: 42, value: 1094000000 },
+              { city: "تبریز",   pct: 30, value: 816000000 },
             ].map(c => (
               <div key={c.city}>
                 <div className="flex items-center justify-between text-sm">
                   <span className="font-medium">{c.city}</span>
-                  <span className="text-muted-foreground">{c.value}</span>
+                  <span className="text-muted-foreground tabular-nums">{toman(c.value)}</span>
                 </div>
                 <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
                   <div className="h-full gradient-brand" style={{ width: `${c.pct}%` }} />
@@ -74,18 +75,18 @@ function Admin() {
 
       <div className="rounded-2xl border bg-card shadow-soft">
         <div className="flex items-center justify-between border-b px-5 py-4">
-          <h2 className="font-display text-lg font-semibold">Recent tasks</h2>
-          <button className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-accent">View all</button>
+          <h2 className="font-display text-lg font-semibold">آخرین درخواست‌ها</h2>
+          <button className="rounded-lg border px-3 py-1.5 text-xs font-medium hover:bg-accent">مشاهده همه</button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-muted/40 text-left text-xs uppercase tracking-wide text-muted-foreground">
+            <thead className="bg-muted/40 text-right text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
-                <th className="px-5 py-3 font-medium">ID</th>
-                <th className="px-5 py-3 font-medium">Title</th>
-                <th className="px-5 py-3 font-medium">City</th>
-                <th className="px-5 py-3 font-medium">Budget</th>
-                <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium">شناسه</th>
+                <th className="px-5 py-3 font-medium">عنوان</th>
+                <th className="px-5 py-3 font-medium">شهر</th>
+                <th className="px-5 py-3 font-medium">مبلغ</th>
+                <th className="px-5 py-3 font-medium">وضعیت</th>
                 <th className="px-5 py-3 font-medium" />
               </tr>
             </thead>
@@ -95,9 +96,9 @@ function Admin() {
                   <td className="px-5 py-3 font-mono text-xs text-muted-foreground">{t.id}</td>
                   <td className="px-5 py-3 font-medium">{t.title}</td>
                   <td className="px-5 py-3 text-muted-foreground">{t.city}</td>
-                  <td className="px-5 py-3 font-semibold tabular-nums">${t.budget}</td>
+                  <td className="px-5 py-3 font-semibold tabular-nums whitespace-nowrap">{toman(t.budget)}</td>
                   <td className="px-5 py-3"><StatusBadge status={t.status} /></td>
-                  <td className="px-5 py-3 text-right"><button className="grid h-8 w-8 place-items-center rounded-lg hover:bg-accent"><MoreHorizontal className="h-4 w-4" /></button></td>
+                  <td className="px-5 py-3 text-left"><button className="grid h-8 w-8 place-items-center rounded-lg hover:bg-accent"><MoreHorizontal className="h-4 w-4" /></button></td>
                 </tr>
               ))}
             </tbody>

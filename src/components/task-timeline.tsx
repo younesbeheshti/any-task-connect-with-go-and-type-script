@@ -3,16 +3,17 @@ import { cn } from "@/lib/utils";
 import type { TaskStatus } from "@/lib/mock-data";
 
 const STEPS: { key: TaskStatus; label: string }[] = [
-  { key: "open",        label: "Created" },
-  { key: "assigned",    label: "Assigned" },
-  { key: "in_progress", label: "In Progress" },
-  { key: "completed",   label: "Completed" },
-  { key: "verified",    label: "Verified" },
-  { key: "paid",        label: "Paid" },
+  { key: "posted",                label: "ثبت شده" },
+  { key: "awaiting_applicants",   label: "در انتظار متقاضی" },
+  { key: "accepted",              label: "پذیرفته شده" },
+  { key: "in_progress",           label: "در حال انجام" },
+  { key: "completed",             label: "تکمیل شده" },
+  { key: "awaiting_verification", label: "در انتظار تایید" },
+  { key: "paid",                  label: "پرداخت شده" },
 ];
 
 export function TaskTimeline({ status }: { status: TaskStatus }) {
-  const currentIdx = STEPS.findIndex(s => s.key === status);
+  const currentIdx = Math.max(0, STEPS.findIndex(s => s.key === status));
   return (
     <ol className="flex flex-col gap-0 sm:flex-row sm:items-start sm:gap-0">
       {STEPS.map((step, i) => {
@@ -38,7 +39,7 @@ export function TaskTimeline({ status }: { status: TaskStatus }) {
               </div>
               <span className={cn("mt-2 text-xs font-medium", (done || current) ? "text-foreground" : "text-muted-foreground")}>{step.label}</span>
             </div>
-            <div className={cn("ml-1 flex-1 pb-6 sm:hidden", i === STEPS.length - 1 && "pb-0")}>
+            <div className={cn("ms-1 flex-1 pb-6 sm:hidden", i === STEPS.length - 1 && "pb-0")}>
               <div className={cn("text-sm font-medium", (done || current) ? "text-foreground" : "text-muted-foreground")}>{step.label}</div>
             </div>
           </li>

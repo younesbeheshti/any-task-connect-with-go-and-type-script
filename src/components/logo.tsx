@@ -5,7 +5,7 @@ export function Logo({ withText = true, size = 28 }: { withText?: boolean; size?
   return (
     <Link to="/" className="inline-flex items-center gap-2 font-display font-bold tracking-tight">
       <Bridge size={size} />
-      {withText && <span className="text-lg">TaskBridge</span>}
+      {withText && <span className="text-lg">تسک‌بریج</span>}
     </Link>
   );
 }
