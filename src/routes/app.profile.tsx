@@ -32,7 +32,7 @@ function Profile() {
             <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
               <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />تهران، ایران</span>
               <span className="inline-flex items-center gap-1.5"><Mail className="h-3.5 w-3.5" />sara@example.com</span>
-              <span className="inline-flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" dir="ltr" />{toFa("+98 912 345 6789")}</span>
+              <span className="inline-flex items-center gap-1.5" dir="ltr"><Phone className="h-3.5 w-3.5" />{toFa("+98 912 345 6789")}</span>
             </div>
           </div>
           <button className="inline-flex items-center gap-1.5 rounded-lg border bg-card px-3.5 py-2 text-sm font-medium hover:bg-accent">
