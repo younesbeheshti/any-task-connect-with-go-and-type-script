@@ -1,0 +1,6 @@
+# Placeholder for Phase 2 Docker Compose services:
+# - api
+# - postgres
+# - redis
+# - rabbitmq
+# - worker

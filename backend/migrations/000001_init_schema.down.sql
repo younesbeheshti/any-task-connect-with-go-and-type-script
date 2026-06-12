@@ -1,0 +1,19 @@
+DROP TABLE IF EXISTS refresh_tokens;
+DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS notifications;
+DROP TABLE IF EXISTS chat_messages;
+DROP TABLE IF EXISTS transactions;
+DROP TABLE IF EXISTS applications;
+DROP TABLE IF EXISTS task_timeline;
+DROP TABLE IF EXISTS tasks;
+DROP TABLE IF EXISTS wallets;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS cities;
+DROP TABLE IF EXISTS categories;
+
+DROP TYPE IF EXISTS notification_type;
+DROP TYPE IF EXISTS transaction_status;
+DROP TYPE IF EXISTS transaction_type;
+DROP TYPE IF EXISTS application_status;
+DROP TYPE IF EXISTS task_status;
+DROP TYPE IF EXISTS user_role;
