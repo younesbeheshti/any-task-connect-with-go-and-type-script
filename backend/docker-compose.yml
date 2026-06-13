@@ -1,0 +1,124 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: taskbridge-postgres
+    environment:
+      POSTGRES_USER: taskbridge
+      POSTGRES_PASSWORD: taskbridge
+      POSTGRES_DB: taskbridge
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - taskbridge
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskbridge -d taskbridge"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    container_name: taskbridge-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - taskbridge
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: taskbridge-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: taskbridge
+      RABBITMQ_DEFAULT_PASS: taskbridge
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - taskbridge
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  migrate:
+    image: migrate/migrate:v4.18.1
+    container_name: taskbridge-migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./migrations:/migrations
+    networks:
+      - taskbridge
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://taskbridge:taskbridge@postgres:5432/taskbridge?sslmode=disable",
+        "up",
+      ]
+    restart: "no"
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: taskbridge-api
+    env_file:
+      - .env
+    environment:
+      APP_ENVIRONMENT: development
+      APP_PORT: "8080"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: taskbridge
+      DB_PASSWORD: taskbridge
+      DB_NAME: taskbridge
+      DB_SSL_MODE: disable
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      RABBITMQ_URL: amqp://taskbridge:taskbridge@rabbitmq:5672/
+      JWT_SECRET: dev-secret-change-in-production-min-32-chars
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    networks:
+      - taskbridge
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  taskbridge:
+    driver: bridge

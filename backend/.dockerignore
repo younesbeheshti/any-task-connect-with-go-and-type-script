@@ -1,0 +1,8 @@
+.env
+.git
+*.md
+docs/architecture.md
+docker-compose.yml
+scripts/
+**/*_test.go
+**/.gitkeep

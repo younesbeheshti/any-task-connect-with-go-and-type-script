@@ -1,0 +1,53 @@
+basePath: /
+definitions:
+  health.healthResponse:
+    properties:
+      services:
+        additionalProperties:
+          type: string
+        type: object
+      status:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Escrow-based marketplace backend API.
+  title: TaskBridge API
+  version: "1.0"
+paths:
+  /health:
+    get:
+      description: Returns the health status of the application and its dependencies
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/health.healthResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/health.healthResponse'
+      summary: Health check
+      tags:
+      - health
+  /ready:
+    get:
+      description: Returns readiness status for orchestrators
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/health.healthResponse'
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: '#/definitions/health.healthResponse'
+      summary: Readiness check
+      tags:
+      - health
+swagger: "2.0"
