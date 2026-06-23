@@ -130,13 +130,17 @@ type UpdateTaskInput struct {
 
 // TaskFilter supports list/search queries.
 type TaskFilter struct {
-	CityID     *uuid.UUID
-	CategoryID *uuid.UUID
-	Status     *TaskStatus
-	Query      string
-	Sort       string // newest, budget, deadline
+	CityID      *uuid.UUID
+	CityTitle   string
+	CategoryID  *uuid.UUID
+	CatTitle    string
+	Status      *TaskStatus
+	Query       string
+	Sort        string // newest, budget, deadline
+	MinBudget   *int64
+	MaxBudget   *int64
 	RequesterID *uuid.UUID
-	AgentID    *uuid.UUID
+	AgentID     *uuid.UUID
 }
 
 // EscrowInfo returned on task creation.

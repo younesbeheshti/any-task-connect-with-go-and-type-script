@@ -1,13 +1,14 @@
-import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, PlusCircle, Wallet, MessagesSquare, Bell, User, Settings, Search, Moon, Sun,
-  Shield, Menu, X, Briefcase, ClipboardList, CheckCircle2, Activity, Sparkles, Users, BarChart3, FileBarChart, ArrowLeftRight,
+  Shield, Menu, X, Briefcase, ClipboardList, CheckCircle2, Activity, Sparkles, Users, BarChart3, FileBarChart, ArrowLeftRight, LogOut,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { useTheme } from "@/components/theme-provider";
 import { useRole, ROLE_LABELS, type Role } from "@/components/role-context";
+import { useAuth } from "@/lib/auth-context";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/app")({
   head: () => ({ meta: [{ title: "داشبورد — تسک‌بریج" }] }),
@@ -50,11 +51,46 @@ const navByRole: Record<Role, NavItem[]> = {
   ],
 };
 
+function userInitials(fullName: string) {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].slice(0, 2);
+  return parts[0][0] + parts[parts.length - 1][0];
+}
+
 function AppShell() {
   const [open, setOpen] = useState(false);
+  const { user, loading, isAuthenticated, logout } = useAuth();
+  const { setRole } = useRole();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      navigate({ to: "/login" });
+    }
+  }, [loading, isAuthenticated]);
+
+  // On first authenticated load, sync the role-switcher to the JWT role
+  useEffect(() => {
+    if (user) setRole(user.role);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center space-y-2">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">در حال بارگذاری...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
+
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar onClose={() => setOpen(false)} mobileOpen={open} />
+      <Sidebar onClose={() => setOpen(false)} mobileOpen={open} onLogout={logout} />
       <div className="lg:pr-72">
         <Topbar onMenu={() => setOpen(true)} />
         <main className="px-4 py-6 sm:px-6 lg:px-8">
@@ -88,9 +124,10 @@ function RoleSwitcher() {
   );
 }
 
-function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
+function Sidebar({ mobileOpen, onClose, onLogout }: { mobileOpen: boolean; onClose: () => void; onLogout: () => void }) {
   const path = useRouterState({ select: s => s.location.pathname });
   const { role } = useRole();
+  const { user } = useAuth();
   const nav = navByRole[role];
   return (
     <>
@@ -128,15 +165,24 @@ function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => 
             );
           })}
         </nav>
-        <div className="border-t p-3">
+        <div className="border-t p-3 space-y-1">
           <Link to="/app/profile" className="flex items-center gap-3 rounded-lg p-2 hover:bg-accent">
-            <span className="grid h-9 w-9 place-items-center rounded-full gradient-brand text-sm font-bold text-white">س‌م</span>
+            <span className="grid h-9 w-9 place-items-center rounded-full gradient-brand text-sm font-bold text-white">
+              {user ? userInitials(user.fullName) : "؟"}
+            </span>
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold">سارا محمدی</div>
-              <div className="truncate text-xs text-muted-foreground">{ROLE_LABELS[role]} · پرو</div>
+              <div className="truncate text-sm font-semibold">{user?.fullName ?? "..."}</div>
+              <div className="truncate text-xs text-muted-foreground">{ROLE_LABELS[role]}</div>
             </div>
             <Settings className="h-4 w-4 text-muted-foreground" />
           </Link>
+          <button
+            onClick={onLogout}
+            className="flex w-full items-center gap-3 rounded-lg p-2 text-sm text-muted-foreground hover:bg-accent hover:text-destructive"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>خروج از حساب</span>
+          </button>
         </div>
       </aside>
     </>

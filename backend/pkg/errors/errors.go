@@ -48,11 +48,11 @@ func New(code, message string, status int, err error) *AppError {
 	}
 }
 
-// Validation creates a validation error with field details.
+// Validation creates a validation AppError with field details.
 func Validation(fields map[string]string) *AppError {
 	return &AppError{
 		Code:       "VALIDATION_FAILED",
-		Message:    "validation failed",
+		Message:    "اطلاعات وارد شده معتبر نیست",
 		HTTPStatus: http.StatusBadRequest,
 		Fields:     fields,
 		Err:        ErrValidation,

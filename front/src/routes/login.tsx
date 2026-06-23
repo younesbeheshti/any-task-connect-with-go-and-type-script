@@ -1,35 +1,75 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Phone, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
+import { Phone, Mail, Lock, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { toast } from "sonner";
 import { toFa } from "@/lib/fa";
+import { useAuth, type AuthUser } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/login")({
   head: () => ({ meta: [{ title: "ورود — تسک‌بریج" }] }),
   component: Login,
 });
 
+export function roleHome(user: AuthUser) {
+  if (user.role === "admin") return "/app/admin";
+  if (user.role === "agent") return "/app/agent";
+  return "/app";
+}
+
+function isEmail(value: string) {
+  return value.includes("@");
+}
+
 function Login() {
   const [show, setShow] = useState(false);
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { login } = useAuth();
   const nav = useNavigate();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!identifier || !password) { toast.error("لطفاً همه فیلدها را پر کنید"); return; }
+    setSubmitting(true);
+    try {
+      const u = await login(identifier, password);
+      toast.success("با موفقیت وارد شدید");
+      nav({ to: roleHome(u) as any });
+    } catch (err: any) {
+      toast.error(err?.message ?? "ورود ناموفق بود");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const identifierIsEmail = isEmail(identifier);
+
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
       <div className="flex flex-col px-6 py-8 sm:px-10">
         <Logo />
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
           <h1 className="text-3xl font-bold tracking-tight">خوش آمدید</h1>
-          <p className="mt-2 text-sm text-muted-foreground">برای مدیریت درخواست‌ها و انجام‌دهنده‌های خود وارد شوید.</p>
-          <form
-            onSubmit={(e) => { e.preventDefault(); toast.success("با موفقیت وارد شدید"); nav({ to: "/app" }); }}
-            className="mt-8 space-y-4"
-          >
-            <Field icon={Phone} type="tel" label="شماره موبایل" placeholder={toFa("09120000000")} dir="ltr" />
+          <p className="mt-2 text-sm text-muted-foreground">برای مدیریت درخواست‌ها وارد شوید.</p>
+          <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+            <Field
+              icon={identifierIsEmail ? Mail : Phone}
+              type={identifierIsEmail ? "email" : "tel"}
+              label="شماره موبایل یا ایمیل"
+              placeholder={toFa("09120000000") + " یا example@email.com"}
+              dir="ltr"
+              value={identifier}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIdentifier(e.target.value)}
+            />
             <Field
               icon={Lock}
               type={show ? "text" : "password"}
               label="رمز عبور"
               placeholder="••••••••"
+              value={password}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
               trailing={
                 <button type="button" onClick={() => setShow(s => !s)} className="text-muted-foreground hover:text-foreground">
                   {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -43,8 +83,11 @@ function Login() {
               </label>
               <a href="#" className="font-medium text-primary hover:underline">فراموشی رمز عبور؟</a>
             </div>
-            <button className="inline-flex w-full items-center justify-center gap-2 rounded-lg gradient-brand py-2.5 text-sm font-semibold text-white shadow-soft hover:opacity-95">
-              ورود <ArrowLeft className="h-4 w-4" />
+            <button
+              disabled={submitting}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg gradient-brand py-2.5 text-sm font-semibold text-white shadow-soft hover:opacity-95 disabled:opacity-60"
+            >
+              {submitting ? "در حال ورود..." : <>ورود <ArrowLeft className="h-4 w-4" /></>}
             </button>
           </form>
           <div className="mt-6 text-center text-sm text-muted-foreground">

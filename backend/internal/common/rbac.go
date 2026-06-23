@@ -51,40 +51,47 @@ func RoleFromAPI(s string) Role {
 	}
 }
 
-// Permission represents a granular authorization action.
+// Permission represents a granular authorization action (Phase 3 model).
 type Permission string
 
 const (
-	PermTaskCreate       Permission = "task:create"
-	PermTaskRead         Permission = "task:read"
-	PermTaskUpdate       Permission = "task:update"
-	PermTaskCancel       Permission = "task:cancel"
-	PermTaskVerify       Permission = "task:verify"
-	PermApplicationApply Permission = "application:apply"
-	PermApplicationRead  Permission = "application:read"
+	PermTaskCreate        Permission = "task:create"
+	PermTaskView          Permission = "task:view"
+	PermTaskEdit          Permission = "task:edit"
+	PermTaskDelete        Permission = "task:delete"
+	PermApplicationCreate Permission = "application:create"
 	PermApplicationAccept Permission = "application:accept"
-	PermWalletRead       Permission = "wallet:read"
-	PermWalletTopup      Permission = "wallet:topup"
-	PermWalletWithdraw   Permission = "wallet:withdraw"
-	PermChatRead         Permission = "chat:read"
-	PermChatSend         Permission = "chat:send"
-	PermReviewCreate     Permission = "review:create"
-	PermAdminAll         Permission = "admin:*"
+	PermWalletView        Permission = "wallet:view"
+	PermWalletWithdraw    Permission = "wallet:withdraw"
+	PermUserManage        Permission = "user:manage"
+	PermAdminDashboard    Permission = "admin:dashboard"
+	PermReviewCreate      Permission = "review:create"
+	PermChatSend          Permission = "chat:send"
+	PermNotificationView  Permission = "notification:view"
 )
+
+// AllPermissions lists every known permission.
+var AllPermissions = []Permission{
+	PermTaskCreate, PermTaskView, PermTaskEdit, PermTaskDelete,
+	PermApplicationCreate, PermApplicationAccept,
+	PermWalletView, PermWalletWithdraw,
+	PermUserManage, PermAdminDashboard,
+	PermReviewCreate, PermChatSend, PermNotificationView,
+}
 
 // RolePermissions maps roles to their granted permissions.
 var RolePermissions = map[Role][]Permission{
-	RoleAdmin: {PermAdminAll},
+	RoleAdmin: AllPermissions,
 	RoleRequester: {
-		PermTaskCreate, PermTaskRead, PermTaskUpdate, PermTaskCancel, PermTaskVerify,
-		PermApplicationRead, PermApplicationAccept,
-		PermWalletRead, PermWalletTopup, PermWalletWithdraw,
-		PermChatRead, PermChatSend, PermReviewCreate,
+		PermTaskCreate, PermTaskView, PermTaskEdit, PermTaskDelete,
+		PermApplicationAccept,
+		PermWalletView, PermWalletWithdraw,
+		PermReviewCreate, PermChatSend, PermNotificationView,
 	},
 	RoleAgent: {
-		PermTaskRead, PermApplicationApply, PermApplicationRead,
-		PermWalletRead, PermWalletWithdraw,
-		PermChatRead, PermChatSend, PermReviewCreate,
+		PermTaskView, PermApplicationCreate,
+		PermWalletView, PermWalletWithdraw,
+		PermReviewCreate, PermChatSend, PermNotificationView,
 	},
 }
 
@@ -95,9 +102,19 @@ func HasPermission(role Role, perm Permission) bool {
 		return false
 	}
 	for _, p := range perms {
-		if p == PermAdminAll || p == perm {
+		if p == perm {
 			return true
 		}
 	}
 	return false
+}
+
+// PermissionsForRole returns permission strings for API responses.
+func PermissionsForRole(role Role) []string {
+	perms := RolePermissions[role]
+	out := make([]string, len(perms))
+	for i, p := range perms {
+		out[i] = string(p)
+	}
+	return out
 }

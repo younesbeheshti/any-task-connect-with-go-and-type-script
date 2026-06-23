@@ -21,6 +21,7 @@ type Service interface {
 	Complete(ctx context.Context, taskID, agentID uuid.UUID) (*domain.Task, error)
 	Verify(ctx context.Context, taskID, requesterID uuid.UUID) (*domain.Task, error)
 
+	Delete(ctx context.Context, taskID, requesterID uuid.UUID) error
 	List(ctx context.Context, filter domain.TaskFilter, pg common.PaginationParams) (*common.PaginatedResult[domain.Task], error)
 	GetTimeline(ctx context.Context, taskID uuid.UUID) ([]domain.TaskTimeline, error)
 

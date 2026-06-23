@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"unicode"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -54,23 +53,7 @@ func validateNationalCode(fl validator.FieldLevel) bool {
 }
 
 func validatePasswordStrength(fl validator.FieldLevel) bool {
-	password := fl.Field().String()
-	if len(password) < 8 {
-		return false
-	}
-
-	var hasUpper, hasLower, hasDigit bool
-	for _, r := range password {
-		switch {
-		case unicode.IsUpper(r):
-			hasUpper = true
-		case unicode.IsLower(r):
-			hasLower = true
-		case unicode.IsDigit(r):
-			hasDigit = true
-		}
-	}
-	return hasUpper && hasLower && hasDigit
+	return len(fl.Field().String()) >= 8
 }
 
 func isValidIranianNationalCode(code string) bool {
@@ -114,7 +97,7 @@ func validationMessage(fe validator.FieldError) string {
 	case "national_code":
 		return "must be a valid national code"
 	case "password_strength":
-		return "must be at least 8 characters with uppercase, lowercase, and digit"
+		return "رمز عبور باید حداقل ۸ کاراکتر باشد"
 	case "min":
 		return fmt.Sprintf("must be at least %s characters", fe.Param())
 	case "max":

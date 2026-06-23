@@ -1,5 +1,130 @@
 basePath: /
 definitions:
+  apiresponse.ErrorBody:
+    properties:
+      error:
+        $ref: '#/definitions/apiresponse.ErrorDetail'
+    type: object
+  apiresponse.ErrorDetail:
+    properties:
+      code:
+        type: string
+      fields:
+        additionalProperties:
+          type: string
+        type: object
+      message:
+        type: string
+    type: object
+  dto.AuthResponse:
+    properties:
+      permissions:
+        items:
+          type: string
+        type: array
+      refreshToken:
+        type: string
+      role:
+        type: string
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/dto.User'
+    type: object
+  dto.User:
+    properties:
+      avatarUrl:
+        type: string
+      city:
+        type: string
+      completedCount:
+        type: integer
+      createdAt:
+        type: string
+      email:
+        type: string
+      fullName:
+        type: string
+      id:
+        type: string
+      phone:
+        type: string
+      rating:
+        type: number
+      role:
+        type: string
+      verification:
+        $ref: '#/definitions/dto.Verification'
+    type: object
+  dto.UserStats:
+    properties:
+      completedCount:
+        type: integer
+      lockedBalance:
+        type: integer
+      rating:
+        type: number
+      ratingCount:
+        type: integer
+      walletBalance:
+        type: integer
+    type: object
+  dto.Verification:
+    properties:
+      email:
+        type: boolean
+      level:
+        type: string
+      nationalId:
+        type: boolean
+      phone:
+        type: boolean
+    type: object
+  handler.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+    required:
+    - password
+    type: object
+  handler.RegisterRequest:
+    properties:
+      email:
+        type: string
+      fullName:
+        maxLength: 200
+        minLength: 2
+        type: string
+      password:
+        type: string
+      phone:
+        type: string
+      role:
+        enum:
+        - requester
+        - agent
+        type: string
+    required:
+    - fullName
+    - password
+    - phone
+    - role
+    type: object
+  handler.UpdateProfileRequest:
+    properties:
+      avatarUrl:
+        type: string
+      bio:
+        type: string
+      city:
+        type: string
+      fullName:
+        type: string
+    type: object
   health.healthResponse:
     properties:
       services:
@@ -16,6 +141,120 @@ info:
   title: TaskBridge API
   version: "1.0"
 paths:
+  /auth/change-password:
+    post:
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Change password
+      tags:
+      - auth
+  /auth/forgot-password:
+    post:
+      responses:
+        "204":
+          description: No Content
+      summary: Request password reset
+      tags:
+      - auth
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Credentials
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+      summary: Login
+      tags:
+      - auth
+  /auth/logout:
+    post:
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Logout current device
+      tags:
+      - auth
+  /auth/logout-all:
+    post:
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Logout all devices
+      tags:
+      - auth
+  /auth/otp/send:
+    post:
+      responses:
+        "204":
+          description: No Content
+      summary: Send phone OTP
+      tags:
+      - auth
+  /auth/otp/verify:
+    post:
+      responses:
+        "204":
+          description: No Content
+      summary: Verify phone OTP
+      tags:
+      - auth
+  /auth/refresh:
+    post:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+      summary: Refresh access token
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Registration data
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.AuthResponse'
+      summary: Register a new user
+      tags:
+      - auth
+  /auth/reset-password:
+    post:
+      responses:
+        "204":
+          description: No Content
+      summary: Reset password with token
+      tags:
+      - auth
   /health:
     get:
       description: Returns the health status of the application and its dependencies
@@ -33,6 +272,70 @@ paths:
       summary: Health check
       tags:
       - health
+  /me:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.User'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/apiresponse.ErrorBody'
+      security:
+      - BearerAuth: []
+      summary: Get current user
+      tags:
+      - users
+    patch:
+      consumes:
+      - application/json
+      parameters:
+      - description: Profile fields
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/handler.UpdateProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.User'
+      security:
+      - BearerAuth: []
+      summary: Update current user profile
+      tags:
+      - users
+  /me/avatar:
+    delete:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.User'
+      security:
+      - BearerAuth: []
+      summary: Delete user avatar
+      tags:
+      - users
+  /me/stats:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.UserStats'
+      security:
+      - BearerAuth: []
+      summary: Get user statistics
+      tags:
+      - users
   /ready:
     get:
       description: Returns readiness status for orchestrators
@@ -50,4 +353,22 @@ paths:
       summary: Readiness check
       tags:
       - health
+  /users/{id}/public:
+    get:
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.User'
+      summary: Get public user profile
+      tags:
+      - users
 swagger: "2.0"

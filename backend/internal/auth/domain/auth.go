@@ -12,6 +12,7 @@ type TokenPair struct {
 	AccessToken  string `json:"token"`
 	RefreshToken string `json:"refreshToken,omitempty"`
 	ExpiresIn    int64  `json:"expiresIn"`
+	SessionID    string `json:"-"`
 }
 
 // RegisterInput holds registration request data.
@@ -26,6 +27,7 @@ type RegisterInput struct {
 // LoginInput holds login credentials.
 type LoginInput struct {
 	Phone    string
+	Email    string
 	Password string
 }
 

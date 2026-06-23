@@ -28,8 +28,12 @@ type User struct {
 	EmailVerified        bool       `json:"-"`
 	NationalIDVerified   bool       `json:"-"`
 	VerificationLevel    string     `json:"-"`
+	VerificationStatus   string     `json:"-"`
+	VerificationReason   *string    `json:"-"`
+	VerifiedAt           *time.Time `json:"-"`
 	WalletBalance        int64      `json:"-"`
 	LockedBalance        int64      `json:"-"`
+	CityTitle            string     `json:"city,omitempty"`
 	CreatedAt            time.Time  `json:"createdAt"`
 	UpdatedAt            time.Time  `json:"updatedAt"`
 	DeletedAt            *time.Time `json:"-"`
@@ -75,7 +79,15 @@ func (u *User) ToPublicProfile() PublicProfile {
 	}
 }
 
-// UpdateProfileInput holds mutable profile fields.
+// UserStats holds user statistics for profile view.
+type UserStats struct {
+	Rating         float64 `json:"rating"`
+	CompletedCount int     `json:"completedCount"`
+	RatingCount    int     `json:"ratingCount"`
+	WalletBalance  int64   `json:"walletBalance"`
+	LockedBalance  int64   `json:"lockedBalance"`
+}
+
 type UpdateProfileInput struct {
 	FullName  *string
 	Email     *string

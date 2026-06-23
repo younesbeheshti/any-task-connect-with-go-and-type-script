@@ -3,6 +3,7 @@ import { ArrowUpRight, ClipboardList, CheckCircle2, Wallet, Lock, PlusCircle, Me
 import { tasks, notifications } from "@/lib/mock-data";
 import { TaskCard } from "@/components/task-card";
 import { toman, toFa } from "@/lib/fa";
+import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/app/")({
   head: () => ({ meta: [{ title: "داشبورد — تسک‌بریج" }] }),
@@ -10,6 +11,7 @@ export const Route = createFileRoute("/app/")({
 });
 
 function Dashboard() {
+  const { user } = useAuth();
   const cards = [
     { label: "درخواست‌های فعال",      value: toFa(4),                icon: ClipboardList, trend: "+۲ این هفته",            color: "from-primary to-secondary" },
     { label: "درخواست‌های تکمیل شده",  value: toFa(27),               icon: CheckCircle2,  trend: "+۵ این ماه",             color: "from-success to-secondary" },
@@ -20,7 +22,7 @@ function Dashboard() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">سلام سارا 👋</h1>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">سلام {user?.fullName ?? "..."} 👋</h1>
           <p className="text-sm text-muted-foreground">خلاصه‌ای از درخواست‌های امروز شما.</p>
         </div>
         <Link to="/app/tasks/new" className="inline-flex items-center gap-1.5 rounded-lg gradient-brand px-4 py-2 text-sm font-semibold text-white shadow-soft hover:opacity-95">

@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	tokenTypeAccess  = "access"
-	tokenTypeRefresh = "refresh"
+	TokenTypeAccess  = "access"
+	TokenTypeRefresh = "refresh"
 )
 
 // Claims holds JWT payload data.
@@ -42,12 +42,12 @@ func NewService(cfg configs.JWTConfig) *Service {
 
 // GenerateAccessToken creates a short-lived access token.
 func (s *Service) GenerateAccessToken(userID string, role common.Role) (string, error) {
-	return s.generateToken(userID, role, tokenTypeAccess, s.accessDuration)
+	return s.generateToken(userID, role, TokenTypeAccess, s.accessDuration)
 }
 
 // GenerateRefreshToken creates a long-lived refresh token.
 func (s *Service) GenerateRefreshToken(userID string, role common.Role) (string, error) {
-	return s.generateToken(userID, role, tokenTypeRefresh, s.refreshDuration)
+	return s.generateToken(userID, role, TokenTypeRefresh, s.refreshDuration)
 }
 
 func (s *Service) generateToken(userID string, role common.Role, tokenType string, ttl time.Duration) (string, error) {
@@ -103,7 +103,7 @@ func (s *Service) RefreshToken(refreshToken string) (accessToken string, newRefr
 	if err != nil {
 		return "", "", err
 	}
-	if claims.TokenType != tokenTypeRefresh {
+	if claims.TokenType != TokenTypeRefresh {
 		return "", "", fmt.Errorf("token is not a refresh token")
 	}
 
@@ -126,7 +126,7 @@ func (s *Service) ValidateAccessToken(tokenString string) (*Claims, error) {
 	if err != nil {
 		return nil, err
 	}
-	if claims.TokenType != tokenTypeAccess {
+	if claims.TokenType != TokenTypeAccess {
 		return nil, fmt.Errorf("token is not an access token")
 	}
 	return claims, nil

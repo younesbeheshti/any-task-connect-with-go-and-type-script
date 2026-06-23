@@ -95,7 +95,7 @@ services:
       RABBITMQ_URL: amqp://taskbridge:taskbridge@rabbitmq:5672/
       JWT_SECRET: dev-secret-change-in-production-min-32-chars
     ports:
-      - "8080:8080"
+      - "8000:8080"
     depends_on:
       postgres:
         condition: service_healthy
