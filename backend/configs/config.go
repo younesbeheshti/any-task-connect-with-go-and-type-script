@@ -17,6 +17,11 @@ type Config struct {
 	JWT      JWTConfig      `mapstructure:"jwt"`
 	CORS     CORSConfig     `mapstructure:"cors"`
 	Server   ServerConfig   `mapstructure:"server"`
+	Platform PlatformConfig `mapstructure:"platform"`
+}
+
+type PlatformConfig struct {
+	CommissionPercent int64 `mapstructure:"commission_percent"`
 }
 
 type AppConfig struct {
@@ -134,6 +139,8 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("server.read_timeout", "15s")
 	v.SetDefault("server.write_timeout", "15s")
 	v.SetDefault("server.idle_timeout", "60s")
+
+	v.SetDefault("platform.commission_percent", 8)
 }
 
 func bindEnv(v *viper.Viper) {
@@ -162,6 +169,8 @@ func bindEnv(v *viper.Viper) {
 	_ = v.BindEnv("jwt.secret", "JWT_SECRET")
 	_ = v.BindEnv("jwt.access_ttl", "JWT_ACCESS_TTL")
 	_ = v.BindEnv("jwt.refresh_ttl", "JWT_REFRESH_TTL")
+
+	_ = v.BindEnv("platform.commission_percent", "PLATFORM_COMMISSION_PERCENT")
 }
 
 // Validate checks required configuration values.

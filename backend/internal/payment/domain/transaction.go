@@ -6,20 +6,41 @@ import (
 	"github.com/google/uuid"
 )
 
-// TransactionType categorizes ledger entries.
 type TransactionType string
 
 const (
 	TransactionTypeEscrowLock    TransactionType = "ESCROW_LOCK"
 	TransactionTypeEscrowRelease TransactionType = "ESCROW_RELEASE"
 	TransactionTypeTopup         TransactionType = "TOPUP"
+	TransactionTypeDeposit       TransactionType = "DEPOSIT"
 	TransactionTypeRefund        TransactionType = "REFUND"
 	TransactionTypeWithdraw      TransactionType = "WITHDRAW"
 	TransactionTypeFee           TransactionType = "FEE"
 	TransactionTypeTransfer      TransactionType = "TRANSFER"
+	TransactionTypePayment       TransactionType = "PAYMENT"
+	TransactionTypeCommission    TransactionType = "COMMISSION"
+	TransactionTypeAdjustment    TransactionType = "ADJUSTMENT"
 )
 
-// TransactionStatus represents transaction processing state.
+func (t TransactionType) APIType() string {
+	switch t {
+	case TransactionTypeEscrowLock:
+		return "escrow_in"
+	case TransactionTypeEscrowRelease:
+		return "release"
+	case TransactionTypeTopup, TransactionTypeDeposit:
+		return "topup"
+	case TransactionTypeRefund:
+		return "refund"
+	case TransactionTypeWithdraw:
+		return "withdraw"
+	case TransactionTypeFee, TransactionTypeCommission:
+		return "fee"
+	default:
+		return string(t)
+	}
+}
+
 type TransactionStatus string
 
 const (
@@ -28,31 +49,49 @@ const (
 	TransactionStatusFailed    TransactionStatus = "FAILED"
 	TransactionStatusLocked    TransactionStatus = "LOCKED"
 	TransactionStatusReleased  TransactionStatus = "RELEASED"
+	TransactionStatusReversed  TransactionStatus = "REVERSED"
 )
 
-// Transaction is an immutable wallet ledger entry.
+func (s TransactionStatus) APIStatus() string {
+	switch s {
+	case TransactionStatusPending:
+		return "pending"
+	case TransactionStatusCompleted:
+		return "completed"
+	case TransactionStatusFailed:
+		return "failed"
+	case TransactionStatusLocked:
+		return "locked"
+	case TransactionStatusReleased:
+		return "released"
+	case TransactionStatusReversed:
+		return "reversed"
+	default:
+		return string(s)
+	}
+}
+
 type Transaction struct {
 	ID              uuid.UUID         `json:"id"`
 	WalletID        uuid.UUID         `json:"-"`
 	TaskID          *uuid.UUID        `json:"relatedTaskId"`
 	Amount          int64             `json:"amount"`
+	Currency        string            `json:"currency"`
 	Type            TransactionType   `json:"type"`
 	Status          TransactionStatus `json:"status"`
-	ReferenceNumber string            `json:"id"`
+	ReferenceNumber string            `json:"referenceNumber"`
 	Description     string            `json:"description"`
 	CreatedAt       time.Time         `json:"date"`
 }
 
-// TransactionFilter supports ledger queries.
 type TransactionFilter struct {
-	WalletID  *uuid.UUID
-	TaskID    *uuid.UUID
-	Type      *TransactionType
-	DateFrom  *time.Time
-	DateTo    *time.Time
+	WalletID *uuid.UUID
+	TaskID   *uuid.UUID
+	Type     *TransactionType
+	DateFrom *time.Time
+	DateTo   *time.Time
 }
 
-// EscrowReleaseInput holds payment release parameters.
 type EscrowReleaseInput struct {
 	TaskID      uuid.UUID
 	RequesterID uuid.UUID
@@ -61,7 +100,6 @@ type EscrowReleaseInput struct {
 	Fee         int64
 }
 
-// EscrowLockInput holds escrow lock parameters on task creation.
 type EscrowLockInput struct {
 	RequesterID uuid.UUID
 	TaskID      uuid.UUID

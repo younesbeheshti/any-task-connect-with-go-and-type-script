@@ -17,10 +17,14 @@ type Cache interface {
 
 // Cache key builders.
 const (
-	KeyJWTBlacklist  = "jwt:blacklist:"
-	KeySession       = "session:"
-	KeyRateLimit     = "ratelimit:"
-	KeyOnlineUser    = "online:"
-	KeyTaskCache     = "task:"
-	KeyNotification  = "notifications:"
+	KeyJWTBlacklist   = "jwt:blacklist:"
+	KeySession        = "session:"
+	KeyRateLimit      = "ratelimit:"
+	KeyOnlineUser     = "online:"
+	KeyTaskCache      = "task:"
+	KeyNotification   = "notifications:"
+	KeyWalletCache    = "wallet:"
+	KeyWalletStats    = "wallet_stats:"
+	KeyRevenueDaily   = "revenue:daily"
+	KeyRevenueMonthly = "revenue:monthly"
 )

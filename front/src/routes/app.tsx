@@ -1,7 +1,7 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard, PlusCircle, Wallet, MessagesSquare, Bell, User, Settings, Search, Moon, Sun,
-  Shield, Menu, X, Briefcase, ClipboardList, CheckCircle2, Activity, Sparkles, Users, BarChart3, FileBarChart, ArrowLeftRight, LogOut,
+  Menu, X, Briefcase, ClipboardList, CheckCircle2, Activity, Sparkles, Users, BarChart3, FileBarChart, LogOut,
 } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { useTheme } from "@/components/theme-provider";
@@ -69,7 +69,6 @@ function AppShell() {
     }
   }, [loading, isAuthenticated]);
 
-  // On first authenticated load, sync the role-switcher to the JWT role
   useEffect(() => {
     if (user) setRole(user.role);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -101,29 +100,6 @@ function AppShell() {
   );
 }
 
-function RoleSwitcher() {
-  const { role, setRole } = useRole();
-  const roles: Role[] = ["requester", "agent", "admin"];
-  return (
-    <div className="rounded-xl border bg-card p-1">
-      <div className="flex items-center gap-1 text-xs">
-        {roles.map(r => (
-          <button
-            key={r}
-            onClick={() => setRole(r)}
-            className={cn(
-              "flex-1 rounded-lg px-2 py-1.5 font-medium transition-colors",
-              role === r ? "bg-primary text-primary-foreground shadow-soft" : "text-muted-foreground hover:bg-accent"
-            )}
-          >
-            {ROLE_LABELS[r]}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function Sidebar({ mobileOpen, onClose, onLogout }: { mobileOpen: boolean; onClose: () => void; onLogout: () => void }) {
   const path = useRouterState({ select: s => s.location.pathname });
   const { role } = useRole();
@@ -136,14 +112,11 @@ function Sidebar({ mobileOpen, onClose, onLogout }: { mobileOpen: boolean; onClo
         "fixed inset-y-0 right-0 z-50 flex w-72 flex-col border-l bg-sidebar transition-transform lg:translate-x-0",
         mobileOpen ? "translate-x-0" : "translate-x-full"
       )}>
-        <div className="flex items-center justify-between px-5 py-4">
+        <div className="flex items-center justify-between px-5 py-4 border-b">
           <Logo />
           <button onClick={onClose} className="lg:hidden"><X className="h-5 w-5" /></button>
         </div>
-        <div className="px-3 pb-2">
-          <RoleSwitcher />
-        </div>
-        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2">
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-3">
           {nav.map(item => {
             const active = item.end ? path === item.to : path.startsWith(item.to);
             return (
@@ -191,8 +164,7 @@ function Sidebar({ mobileOpen, onClose, onLogout }: { mobileOpen: boolean; onClo
 
 function Topbar({ onMenu }: { onMenu: () => void }) {
   const { theme, toggle } = useTheme();
-  const { role, setRole } = useRole();
-  const cycle = () => setRole(role === "requester" ? "agent" : role === "agent" ? "admin" : "requester");
+  const { role } = useRole();
   return (
     <header className="sticky top-0 z-30 flex items-center gap-3 border-b bg-background/80 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
       <button onClick={onMenu} className="grid h-9 w-9 place-items-center rounded-lg border bg-card lg:hidden"><Menu className="h-4 w-4" /></button>
@@ -204,9 +176,6 @@ function Topbar({ onMenu }: { onMenu: () => void }) {
         />
       </div>
       <div className="me-auto flex items-center gap-2">
-        <button onClick={cycle} title="تغییر نقش" className="hidden sm:inline-flex items-center gap-1.5 rounded-lg border bg-card px-3 py-2 text-xs font-medium hover:bg-accent">
-          <ArrowLeftRight className="h-3.5 w-3.5" /> {ROLE_LABELS[role]}
-        </button>
         <button onClick={toggle} className="grid h-9 w-9 place-items-center rounded-lg border bg-card hover:bg-accent" aria-label="تغییر تم">
           {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </button>

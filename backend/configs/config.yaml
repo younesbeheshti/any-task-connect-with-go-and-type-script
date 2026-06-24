@@ -52,3 +52,6 @@ server:
   read_timeout: 15s
   write_timeout: 15s
   idle_timeout: 60s
+
+platform:
+  commission_percent: 8

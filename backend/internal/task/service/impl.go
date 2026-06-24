@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/common"
+	paymentdomain "github.com/younesbeheshti/any-task-connect/backend/internal/payment/domain"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/task/domain"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/task/repository"
 	apperrors "github.com/younesbeheshti/any-task-connect/backend/pkg/errors"
@@ -14,15 +15,28 @@ import (
 
 const escrowFeePercent int64 = 8
 
+// WalletService is the subset of wallet operations needed by tasks.
+type WalletService interface {
+	LockEscrow(ctx context.Context, input paymentdomain.EscrowLockInput) error
+	ReleaseEscrow(ctx context.Context, input paymentdomain.EscrowReleaseInput) error
+	RefundEscrow(ctx context.Context, taskID, requesterID uuid.UUID, amount, fee int64) error
+}
+
 // TaskService implements service.Service.
 type TaskService struct {
 	repo      repository.Repository
 	publisher common.Publisher
+	walletSvc WalletService
 }
 
 // NewTaskService creates a new TaskService.
 func NewTaskService(repo repository.Repository, publisher common.Publisher) *TaskService {
 	return &TaskService{repo: repo, publisher: publisher}
+}
+
+// SetWalletService injects the wallet service after construction to avoid import cycles.
+func (s *TaskService) SetWalletService(ws WalletService) {
+	s.walletSvc = ws
 }
 
 func (s *TaskService) Create(ctx context.Context, input domain.CreateTaskInput) (*domain.Task, *domain.EscrowInfo, error) {
@@ -57,6 +71,19 @@ func (s *TaskService) Create(ctx context.Context, input domain.CreateTaskInput) 
 	task, err = s.Transition(ctx, task.ID, domain.TaskStatusOpen, input.RequesterID, "")
 	if err != nil {
 		return nil, nil, err
+	}
+
+	if s.walletSvc != nil {
+		lockInput := paymentdomain.EscrowLockInput{
+			RequesterID: input.RequesterID,
+			TaskID:      task.ID,
+			Budget:      input.Budget,
+			Fee:         escrowFee,
+		}
+		if lockErr := s.walletSvc.LockEscrow(ctx, lockInput); lockErr != nil {
+			// Non-fatal: task is created but escrow not locked. Return specific error.
+			return nil, nil, apperrors.New("INSUFFICIENT_FUNDS", "موجودی کیف پول کافی نیست", 422, apperrors.ErrValidation)
+		}
 	}
 
 	if s.publisher != nil {
@@ -151,7 +178,24 @@ func (s *TaskService) Delete(ctx context.Context, taskID, requesterID uuid.UUID)
 }
 
 func (s *TaskService) Cancel(ctx context.Context, taskID, actorID uuid.UUID) (*domain.Task, error) {
-	return s.Transition(ctx, taskID, domain.TaskStatusCancelled, actorID, "لغو شده")
+	task, err := s.repo.GetByID(ctx, taskID)
+	if errors.Is(err, common.ErrNotFound) {
+		return nil, apperrors.New("NOT_FOUND", "تسک یافت نشد", 404, apperrors.ErrNotFound)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	updated, err := s.Transition(ctx, taskID, domain.TaskStatusCancelled, actorID, "لغو شده")
+	if err != nil {
+		return nil, err
+	}
+
+	if s.walletSvc != nil {
+		_ = s.walletSvc.RefundEscrow(ctx, task.ID, task.RequesterID, task.Budget, task.EscrowFee)
+	}
+
+	return updated, nil
 }
 
 func (s *TaskService) Publish(ctx context.Context, taskID, requesterID uuid.UUID) (*domain.Task, error) {
@@ -171,11 +215,35 @@ func (s *TaskService) Complete(ctx context.Context, taskID, agentID uuid.UUID) (
 }
 
 func (s *TaskService) Verify(ctx context.Context, taskID, requesterID uuid.UUID) (*domain.Task, error) {
-	task, err := s.Transition(ctx, taskID, domain.TaskStatusVerified, requesterID, "")
+	task, err := s.repo.GetByID(ctx, taskID)
+	if errors.Is(err, common.ErrNotFound) {
+		return nil, apperrors.New("NOT_FOUND", "تسک یافت نشد", 404, apperrors.ErrNotFound)
+	}
 	if err != nil {
 		return nil, err
 	}
-	return s.Transition(ctx, task.ID, domain.TaskStatusPaid, requesterID, "")
+
+	updated, transErr := s.Transition(ctx, taskID, domain.TaskStatusVerified, requesterID, "")
+	if transErr != nil {
+		return nil, transErr
+	}
+	updated, transErr = s.Transition(ctx, updated.ID, domain.TaskStatusPaid, requesterID, "")
+	if transErr != nil {
+		return nil, transErr
+	}
+
+	if s.walletSvc != nil && task.AssignedAgentID != nil {
+		releaseInput := paymentdomain.EscrowReleaseInput{
+			TaskID:      task.ID,
+			RequesterID: task.RequesterID,
+			AgentID:     *task.AssignedAgentID,
+			Amount:      task.Budget,
+			Fee:         task.EscrowFee,
+		}
+		_ = s.walletSvc.ReleaseEscrow(ctx, releaseInput)
+	}
+
+	return updated, nil
 }
 
 func (s *TaskService) List(ctx context.Context, filter domain.TaskFilter, pg common.PaginationParams) (*common.PaginatedResult[domain.Task], error) {

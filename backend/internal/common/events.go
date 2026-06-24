@@ -8,15 +8,25 @@ import (
 
 // Event names for RabbitMQ routing keys.
 const (
-	EventTaskCreated           = "task.created"
-	EventTaskAssigned          = "task.assigned"
-	EventTaskStarted           = "task.started"
-	EventTaskCompleted         = "task.completed"
-	EventTaskVerified          = "task.verified"
-	EventPaymentReleased       = "payment.released"
-	EventApplicationSubmitted  = "application.submitted"
-	EventNotificationCreated   = "notification.created"
-	EventReviewCreated         = "review.created"
+	EventTaskCreated          = "task.created"
+	EventTaskAssigned         = "task.assigned"
+	EventTaskStarted          = "task.started"
+	EventTaskCompleted        = "task.completed"
+	EventTaskVerified         = "task.verified"
+	EventPaymentReleased      = "payment.released"
+	EventApplicationSubmitted = "application.submitted"
+	EventNotificationCreated  = "notification.created"
+	EventReviewCreated        = "review.created"
+
+	EventWalletUpdated     = "wallet.updated"
+	EventEscrowLocked      = "escrow.locked"
+	EventEscrowReleased    = "escrow.released"
+	EventWithdrawCreated   = "withdraw.created"
+	EventWithdrawApproved  = "withdraw.approved"
+	EventWithdrawRejected  = "withdraw.rejected"
+	EventPaymentCompleted  = "payment.completed"
+	EventCommissionCreated = "commission.created"
+	EventRevenueRecorded   = "revenue.recorded"
 )
 
 // Event is the base envelope for domain events.
