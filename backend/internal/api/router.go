@@ -2,19 +2,23 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
+	adminhandler "github.com/younesbeheshti/any-task-connect/backend/internal/admin/handler"
 	apphandler "github.com/younesbeheshti/any-task-connect/backend/internal/application/handler"
 	appservice "github.com/younesbeheshti/any-task-connect/backend/internal/application/service"
 	authhandler "github.com/younesbeheshti/any-task-connect/backend/internal/auth/handler"
 	authservice "github.com/younesbeheshti/any-task-connect/backend/internal/auth/service"
 	cathandler "github.com/younesbeheshti/any-task-connect/backend/internal/category/handler"
 	catservice "github.com/younesbeheshti/any-task-connect/backend/internal/category/service"
+	chathandler "github.com/younesbeheshti/any-task-connect/backend/internal/chat/handler"
 	cityhandler "github.com/younesbeheshti/any-task-connect/backend/internal/city/handler"
 	cityservice "github.com/younesbeheshti/any-task-connect/backend/internal/city/service"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/common"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/common/middleware"
 	dashhandler "github.com/younesbeheshti/any-task-connect/backend/internal/dashboard/handler"
 	dashservice "github.com/younesbeheshti/any-task-connect/backend/internal/dashboard/service"
+	notifhandler "github.com/younesbeheshti/any-task-connect/backend/internal/notification/handler"
 	paymenthandler "github.com/younesbeheshti/any-task-connect/backend/internal/payment/handler"
+	ratinghandler "github.com/younesbeheshti/any-task-connect/backend/internal/rating/handler"
 	revenuehandler "github.com/younesbeheshti/any-task-connect/backend/internal/revenue/handler"
 	taskhandler "github.com/younesbeheshti/any-task-connect/backend/internal/task/handler"
 	taskservice "github.com/younesbeheshti/any-task-connect/backend/internal/task/service"
@@ -27,17 +31,21 @@ import (
 
 // Handlers groups HTTP handlers for API routes.
 type Handlers struct {
-	Auth        *authhandler.Handler
-	User        *userhandler.Handler
-	Category    *cathandler.Handler
-	City        *cityhandler.Handler
-	Task        *taskhandler.Handler
-	Application *apphandler.Handler
-	Dashboard   *dashhandler.Handler
-	Wallet      *wallethandler.Handler
-	Payment     *paymenthandler.Handler
-	Revenue     *revenuehandler.Handler
-	Withdraw    *withdrawhandler.Handler
+	Auth         *authhandler.Handler
+	User         *userhandler.Handler
+	Category     *cathandler.Handler
+	City         *cityhandler.Handler
+	Task         *taskhandler.Handler
+	Application  *apphandler.Handler
+	Dashboard    *dashhandler.Handler
+	Wallet       *wallethandler.Handler
+	Payment      *paymenthandler.Handler
+	Revenue      *revenuehandler.Handler
+	Withdraw     *withdrawhandler.Handler
+	Chat         *chathandler.Handler
+	Notification *notifhandler.Handler
+	Rating       *ratinghandler.Handler
+	Admin        *adminhandler.Handler
 }
 
 // NewHandlers creates API handlers.
@@ -53,20 +61,28 @@ func NewHandlers(
 	payment *paymenthandler.Handler,
 	revenue *revenuehandler.Handler,
 	withdraw *withdrawhandler.Handler,
+	chat *chathandler.Handler,
+	notification *notifhandler.Handler,
+	rating *ratinghandler.Handler,
+	admin *adminhandler.Handler,
 	v *validator.Validator,
 ) *Handlers {
 	return &Handlers{
-		Auth:        authhandler.NewHandler(auth, v),
-		User:        userhandler.NewHandler(users, v),
-		Category:    cathandler.NewHandler(categories),
-		City:        cityhandler.NewHandler(cities),
-		Task:        taskhandler.NewHandler(tasks),
-		Application: apphandler.NewHandler(applications),
-		Dashboard:   dashhandler.NewHandler(dashboard),
-		Wallet:      wallet,
-		Payment:     payment,
-		Revenue:     revenue,
-		Withdraw:    withdraw,
+		Auth:         authhandler.NewHandler(auth, v),
+		User:         userhandler.NewHandler(users, v),
+		Category:     cathandler.NewHandler(categories),
+		City:         cityhandler.NewHandler(cities),
+		Task:         taskhandler.NewHandler(tasks),
+		Application:  apphandler.NewHandler(applications),
+		Dashboard:    dashhandler.NewHandler(dashboard),
+		Wallet:       wallet,
+		Payment:      payment,
+		Revenue:      revenue,
+		Withdraw:     withdraw,
+		Chat:         chat,
+		Notification: notification,
+		Rating:       rating,
+		Admin:        admin,
 	}
 }
 
@@ -85,6 +101,10 @@ func RegisterRoutes(r *gin.Engine, h *Handlers, auth *authservice.AuthService) {
 	v1.GET("/tasks", h.Task.List)
 	v1.GET("/tasks/:id", h.Task.GetByPublicID)
 
+	// Public reviews + user profiles.
+	v1.GET("/tasks/:id/reviews", h.Rating.ListByTask)
+	v1.GET("/users/:id/reviews", h.Rating.ListByUser)
+
 	// Protected routes (auth required).
 	protected := v1.Group("")
 	protected.Use(middleware.AuthJWT(auth))
@@ -101,6 +121,9 @@ func RegisterRoutes(r *gin.Engine, h *Handlers, auth *authservice.AuthService) {
 	protected.POST("/tasks/:id/start", h.Task.Start)
 	protected.POST("/tasks/:id/complete", h.Task.Complete)
 	protected.POST("/tasks/:id/verify", h.Task.Verify)
+
+	// Task reviews (auth required to post).
+	protected.POST("/tasks/:id/reviews", h.Rating.Create)
 
 	// Application routes.
 	protected.POST("/tasks/:id/applications", h.Application.Submit)
@@ -129,15 +152,40 @@ func RegisterRoutes(r *gin.Engine, h *Handlers, auth *authservice.AuthService) {
 	protected.GET("/withdraws", h.Withdraw.ListMine)
 	protected.GET("/withdraws/:id", h.Withdraw.GetByID)
 
+	// Chat routes.
+	protected.GET("/chats", h.Chat.ListChats)
+	protected.GET("/tasks/:id/messages", h.Chat.ListMessages)
+	protected.POST("/tasks/:id/messages", h.Chat.SendMessage)
+	protected.POST("/tasks/:id/messages/read", h.Chat.MarkRead)
+
+	// Notification routes.
+	protected.GET("/notifications", h.Notification.List)
+	protected.PATCH("/notifications/:id/read", h.Notification.MarkRead)
+	protected.POST("/notifications/read-all", h.Notification.MarkAllRead)
+
 	// Admin routes (auth + admin permission required).
 	admin := protected.Group("/admin")
 	admin.Use(middleware.PermissionRequired(common.PermAdminDashboard))
+
+	// Admin metrics.
+	admin.GET("/metrics", h.Admin.GetMetrics)
+
+	// Admin user management.
+	admin.GET("/users", h.Admin.ListUsers)
+	admin.GET("/users/:id", h.Admin.GetUser)
+	admin.PATCH("/users/:id", h.Admin.UpdateUser)
+	admin.POST("/users/:id/suspend", h.Admin.SuspendUser)
+	admin.POST("/users/:id/activate", h.Admin.ActivateUser)
+
+	// Category + city management.
 	admin.POST("/categories", h.Category.Create)
 	admin.PATCH("/categories/:id", h.Category.Update)
 	admin.DELETE("/categories/:id", h.Category.Delete)
 	admin.POST("/cities", h.City.Create)
 	admin.PATCH("/cities/:id", h.City.Update)
 	admin.DELETE("/cities/:id", h.City.Delete)
+
+	// Admin dashboard stats.
 	admin.GET("/dashboard/admin-stats", h.Dashboard.GetAdminStats)
 
 	// Admin financial routes.

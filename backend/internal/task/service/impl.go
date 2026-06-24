@@ -67,12 +67,6 @@ func (s *TaskService) Create(ctx context.Context, input domain.CreateTaskInput) 
 		return nil, nil, err
 	}
 
-	// Immediately publish task to OPEN state.
-	task, err = s.Transition(ctx, task.ID, domain.TaskStatusOpen, input.RequesterID, "")
-	if err != nil {
-		return nil, nil, err
-	}
-
 	if s.walletSvc != nil {
 		lockInput := paymentdomain.EscrowLockInput{
 			RequesterID: input.RequesterID,
@@ -81,9 +75,15 @@ func (s *TaskService) Create(ctx context.Context, input domain.CreateTaskInput) 
 			Fee:         escrowFee,
 		}
 		if lockErr := s.walletSvc.LockEscrow(ctx, lockInput); lockErr != nil {
-			// Non-fatal: task is created but escrow not locked. Return specific error.
+			_ = s.repo.SoftDelete(ctx, task.ID)
 			return nil, nil, apperrors.New("INSUFFICIENT_FUNDS", "موجودی کیف پول کافی نیست", 422, apperrors.ErrValidation)
 		}
+	}
+
+	// Transition to OPEN only after escrow is confirmed locked.
+	task, err = s.Transition(ctx, task.ID, domain.TaskStatusOpen, input.RequesterID, "")
+	if err != nil {
+		return nil, nil, err
 	}
 
 	if s.publisher != nil {

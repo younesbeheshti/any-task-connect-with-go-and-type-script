@@ -16,14 +16,25 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as AppWalletRouteImport } from './routes/app.wallet'
+import { Route as AppReviewsRouteImport } from './routes/app.reviews'
 import { Route as AppProfileRouteImport } from './routes/app.profile'
 import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
+import { Route as AppInProgressRouteImport } from './routes/app.in-progress'
+import { Route as AppEarningsRouteImport } from './routes/app.earnings'
+import { Route as AppCompletedRouteImport } from './routes/app.completed'
 import { Route as AppChatRouteImport } from './routes/app.chat'
+import { Route as AppApplicationsRouteImport } from './routes/app.applications'
 import { Route as AppAgentRouteImport } from './routes/app.agent'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
+import { Route as AppAcceptedRouteImport } from './routes/app.accepted'
 import { Route as AppTasksIndexRouteImport } from './routes/app.tasks.index'
+import { Route as AppAdminIndexRouteImport } from './routes/app.admin.index'
 import { Route as AppTasksNewRouteImport } from './routes/app.tasks.new'
 import { Route as AppTasksIdRouteImport } from './routes/app.tasks.$id'
+import { Route as AppAdminUsersRouteImport } from './routes/app.admin.users'
+import { Route as AppAdminReportsRouteImport } from './routes/app.admin.reports'
+import { Route as AppAdminFinanceRouteImport } from './routes/app.admin.finance'
+import { Route as AppTasksIdApplicationsRouteImport } from './routes/app.tasks.$id.applications'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -60,6 +71,11 @@ const AppWalletRoute = AppWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AppRoute,
 } as any)
+const AppReviewsRoute = AppReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProfileRoute = AppProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -70,9 +86,29 @@ const AppNotificationsRoute = AppNotificationsRouteImport.update({
   path: '/notifications',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInProgressRoute = AppInProgressRouteImport.update({
+  id: '/in-progress',
+  path: '/in-progress',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppEarningsRoute = AppEarningsRouteImport.update({
+  id: '/earnings',
+  path: '/earnings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCompletedRoute = AppCompletedRouteImport.update({
+  id: '/completed',
+  path: '/completed',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppChatRoute = AppChatRouteImport.update({
   id: '/chat',
   path: '/chat',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppApplicationsRoute = AppApplicationsRouteImport.update({
+  id: '/applications',
+  path: '/applications',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAgentRoute = AppAgentRouteImport.update({
@@ -85,10 +121,20 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAcceptedRoute = AppAcceptedRouteImport.update({
+  id: '/accepted',
+  path: '/accepted',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
   id: '/tasks/',
   path: '/tasks/',
   getParentRoute: () => AppRoute,
+} as any)
+const AppAdminIndexRoute = AppAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppAdminRoute,
 } as any)
 const AppTasksNewRoute = AppTasksNewRouteImport.update({
   id: '/tasks/new',
@@ -100,6 +146,26 @@ const AppTasksIdRoute = AppTasksIdRouteImport.update({
   path: '/tasks/$id',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminUsersRoute = AppAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminReportsRoute = AppAdminReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppAdminFinanceRoute = AppAdminFinanceRouteImport.update({
+  id: '/finance',
+  path: '/finance',
+  getParentRoute: () => AppAdminRoute,
+} as any)
+const AppTasksIdApplicationsRoute = AppTasksIdApplicationsRouteImport.update({
+  id: '/applications',
+  path: '/applications',
+  getParentRoute: () => AppTasksIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -107,32 +173,53 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/app/admin': typeof AppAdminRoute
+  '/app/accepted': typeof AppAcceptedRoute
+  '/app/admin': typeof AppAdminRouteWithChildren
   '/app/agent': typeof AppAgentRoute
+  '/app/applications': typeof AppApplicationsRoute
   '/app/chat': typeof AppChatRoute
+  '/app/completed': typeof AppCompletedRoute
+  '/app/earnings': typeof AppEarningsRoute
+  '/app/in-progress': typeof AppInProgressRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/profile': typeof AppProfileRoute
+  '/app/reviews': typeof AppReviewsRoute
   '/app/wallet': typeof AppWalletRoute
   '/app/': typeof AppIndexRoute
-  '/app/tasks/$id': typeof AppTasksIdRoute
+  '/app/admin/finance': typeof AppAdminFinanceRoute
+  '/app/admin/reports': typeof AppAdminReportsRoute
+  '/app/admin/users': typeof AppAdminUsersRoute
+  '/app/tasks/$id': typeof AppTasksIdRouteWithChildren
   '/app/tasks/new': typeof AppTasksNewRoute
+  '/app/admin/': typeof AppAdminIndexRoute
   '/app/tasks/': typeof AppTasksIndexRoute
+  '/app/tasks/$id/applications': typeof AppTasksIdApplicationsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/app/admin': typeof AppAdminRoute
+  '/app/accepted': typeof AppAcceptedRoute
   '/app/agent': typeof AppAgentRoute
+  '/app/applications': typeof AppApplicationsRoute
   '/app/chat': typeof AppChatRoute
+  '/app/completed': typeof AppCompletedRoute
+  '/app/earnings': typeof AppEarningsRoute
+  '/app/in-progress': typeof AppInProgressRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/profile': typeof AppProfileRoute
+  '/app/reviews': typeof AppReviewsRoute
   '/app/wallet': typeof AppWalletRoute
   '/app': typeof AppIndexRoute
-  '/app/tasks/$id': typeof AppTasksIdRoute
+  '/app/admin/finance': typeof AppAdminFinanceRoute
+  '/app/admin/reports': typeof AppAdminReportsRoute
+  '/app/admin/users': typeof AppAdminUsersRoute
+  '/app/tasks/$id': typeof AppTasksIdRouteWithChildren
   '/app/tasks/new': typeof AppTasksNewRoute
+  '/app/admin': typeof AppAdminIndexRoute
   '/app/tasks': typeof AppTasksIndexRoute
+  '/app/tasks/$id/applications': typeof AppTasksIdApplicationsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -141,16 +228,27 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/app/admin': typeof AppAdminRoute
+  '/app/accepted': typeof AppAcceptedRoute
+  '/app/admin': typeof AppAdminRouteWithChildren
   '/app/agent': typeof AppAgentRoute
+  '/app/applications': typeof AppApplicationsRoute
   '/app/chat': typeof AppChatRoute
+  '/app/completed': typeof AppCompletedRoute
+  '/app/earnings': typeof AppEarningsRoute
+  '/app/in-progress': typeof AppInProgressRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/profile': typeof AppProfileRoute
+  '/app/reviews': typeof AppReviewsRoute
   '/app/wallet': typeof AppWalletRoute
   '/app/': typeof AppIndexRoute
-  '/app/tasks/$id': typeof AppTasksIdRoute
+  '/app/admin/finance': typeof AppAdminFinanceRoute
+  '/app/admin/reports': typeof AppAdminReportsRoute
+  '/app/admin/users': typeof AppAdminUsersRoute
+  '/app/tasks/$id': typeof AppTasksIdRouteWithChildren
   '/app/tasks/new': typeof AppTasksNewRoute
+  '/app/admin/': typeof AppAdminIndexRoute
   '/app/tasks/': typeof AppTasksIndexRoute
+  '/app/tasks/$id/applications': typeof AppTasksIdApplicationsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -160,32 +258,53 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/sitemap.xml'
+    | '/app/accepted'
     | '/app/admin'
     | '/app/agent'
+    | '/app/applications'
     | '/app/chat'
+    | '/app/completed'
+    | '/app/earnings'
+    | '/app/in-progress'
     | '/app/notifications'
     | '/app/profile'
+    | '/app/reviews'
     | '/app/wallet'
     | '/app/'
+    | '/app/admin/finance'
+    | '/app/admin/reports'
+    | '/app/admin/users'
     | '/app/tasks/$id'
     | '/app/tasks/new'
+    | '/app/admin/'
     | '/app/tasks/'
+    | '/app/tasks/$id/applications'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
     | '/register'
     | '/sitemap.xml'
-    | '/app/admin'
+    | '/app/accepted'
     | '/app/agent'
+    | '/app/applications'
     | '/app/chat'
+    | '/app/completed'
+    | '/app/earnings'
+    | '/app/in-progress'
     | '/app/notifications'
     | '/app/profile'
+    | '/app/reviews'
     | '/app/wallet'
     | '/app'
+    | '/app/admin/finance'
+    | '/app/admin/reports'
+    | '/app/admin/users'
     | '/app/tasks/$id'
     | '/app/tasks/new'
+    | '/app/admin'
     | '/app/tasks'
+    | '/app/tasks/$id/applications'
   id:
     | '__root__'
     | '/'
@@ -193,16 +312,27 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/sitemap.xml'
+    | '/app/accepted'
     | '/app/admin'
     | '/app/agent'
+    | '/app/applications'
     | '/app/chat'
+    | '/app/completed'
+    | '/app/earnings'
+    | '/app/in-progress'
     | '/app/notifications'
     | '/app/profile'
+    | '/app/reviews'
     | '/app/wallet'
     | '/app/'
+    | '/app/admin/finance'
+    | '/app/admin/reports'
+    | '/app/admin/users'
     | '/app/tasks/$id'
     | '/app/tasks/new'
+    | '/app/admin/'
     | '/app/tasks/'
+    | '/app/tasks/$id/applications'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -264,6 +394,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppWalletRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/reviews': {
+      id: '/app/reviews'
+      path: '/reviews'
+      fullPath: '/app/reviews'
+      preLoaderRoute: typeof AppReviewsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/profile': {
       id: '/app/profile'
       path: '/profile'
@@ -278,11 +415,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/in-progress': {
+      id: '/app/in-progress'
+      path: '/in-progress'
+      fullPath: '/app/in-progress'
+      preLoaderRoute: typeof AppInProgressRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/earnings': {
+      id: '/app/earnings'
+      path: '/earnings'
+      fullPath: '/app/earnings'
+      preLoaderRoute: typeof AppEarningsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/completed': {
+      id: '/app/completed'
+      path: '/completed'
+      fullPath: '/app/completed'
+      preLoaderRoute: typeof AppCompletedRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/chat': {
       id: '/app/chat'
       path: '/chat'
       fullPath: '/app/chat'
       preLoaderRoute: typeof AppChatRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/applications': {
+      id: '/app/applications'
+      path: '/applications'
+      fullPath: '/app/applications'
+      preLoaderRoute: typeof AppApplicationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/agent': {
@@ -299,12 +464,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/accepted': {
+      id: '/app/accepted'
+      path: '/accepted'
+      fullPath: '/app/accepted'
+      preLoaderRoute: typeof AppAcceptedRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/tasks/': {
       id: '/app/tasks/'
       path: '/tasks'
       fullPath: '/app/tasks/'
       preLoaderRoute: typeof AppTasksIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/app/admin/': {
+      id: '/app/admin/'
+      path: '/'
+      fullPath: '/app/admin/'
+      preLoaderRoute: typeof AppAdminIndexRouteImport
+      parentRoute: typeof AppAdminRoute
     }
     '/app/tasks/new': {
       id: '/app/tasks/new'
@@ -320,31 +499,101 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTasksIdRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/admin/users': {
+      id: '/app/admin/users'
+      path: '/users'
+      fullPath: '/app/admin/users'
+      preLoaderRoute: typeof AppAdminUsersRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/app/admin/reports': {
+      id: '/app/admin/reports'
+      path: '/reports'
+      fullPath: '/app/admin/reports'
+      preLoaderRoute: typeof AppAdminReportsRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/app/admin/finance': {
+      id: '/app/admin/finance'
+      path: '/finance'
+      fullPath: '/app/admin/finance'
+      preLoaderRoute: typeof AppAdminFinanceRouteImport
+      parentRoute: typeof AppAdminRoute
+    }
+    '/app/tasks/$id/applications': {
+      id: '/app/tasks/$id/applications'
+      path: '/applications'
+      fullPath: '/app/tasks/$id/applications'
+      preLoaderRoute: typeof AppTasksIdApplicationsRouteImport
+      parentRoute: typeof AppTasksIdRoute
+    }
   }
 }
 
+interface AppAdminRouteChildren {
+  AppAdminFinanceRoute: typeof AppAdminFinanceRoute
+  AppAdminReportsRoute: typeof AppAdminReportsRoute
+  AppAdminUsersRoute: typeof AppAdminUsersRoute
+  AppAdminIndexRoute: typeof AppAdminIndexRoute
+}
+
+const AppAdminRouteChildren: AppAdminRouteChildren = {
+  AppAdminFinanceRoute: AppAdminFinanceRoute,
+  AppAdminReportsRoute: AppAdminReportsRoute,
+  AppAdminUsersRoute: AppAdminUsersRoute,
+  AppAdminIndexRoute: AppAdminIndexRoute,
+}
+
+const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
+  AppAdminRouteChildren,
+)
+
+interface AppTasksIdRouteChildren {
+  AppTasksIdApplicationsRoute: typeof AppTasksIdApplicationsRoute
+}
+
+const AppTasksIdRouteChildren: AppTasksIdRouteChildren = {
+  AppTasksIdApplicationsRoute: AppTasksIdApplicationsRoute,
+}
+
+const AppTasksIdRouteWithChildren = AppTasksIdRoute._addFileChildren(
+  AppTasksIdRouteChildren,
+)
+
 interface AppRouteChildren {
-  AppAdminRoute: typeof AppAdminRoute
+  AppAcceptedRoute: typeof AppAcceptedRoute
+  AppAdminRoute: typeof AppAdminRouteWithChildren
   AppAgentRoute: typeof AppAgentRoute
+  AppApplicationsRoute: typeof AppApplicationsRoute
   AppChatRoute: typeof AppChatRoute
+  AppCompletedRoute: typeof AppCompletedRoute
+  AppEarningsRoute: typeof AppEarningsRoute
+  AppInProgressRoute: typeof AppInProgressRoute
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppProfileRoute: typeof AppProfileRoute
+  AppReviewsRoute: typeof AppReviewsRoute
   AppWalletRoute: typeof AppWalletRoute
   AppIndexRoute: typeof AppIndexRoute
-  AppTasksIdRoute: typeof AppTasksIdRoute
+  AppTasksIdRoute: typeof AppTasksIdRouteWithChildren
   AppTasksNewRoute: typeof AppTasksNewRoute
   AppTasksIndexRoute: typeof AppTasksIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppAdminRoute: AppAdminRoute,
+  AppAcceptedRoute: AppAcceptedRoute,
+  AppAdminRoute: AppAdminRouteWithChildren,
   AppAgentRoute: AppAgentRoute,
+  AppApplicationsRoute: AppApplicationsRoute,
   AppChatRoute: AppChatRoute,
+  AppCompletedRoute: AppCompletedRoute,
+  AppEarningsRoute: AppEarningsRoute,
+  AppInProgressRoute: AppInProgressRoute,
   AppNotificationsRoute: AppNotificationsRoute,
   AppProfileRoute: AppProfileRoute,
+  AppReviewsRoute: AppReviewsRoute,
   AppWalletRoute: AppWalletRoute,
   AppIndexRoute: AppIndexRoute,
-  AppTasksIdRoute: AppTasksIdRoute,
+  AppTasksIdRoute: AppTasksIdRouteWithChildren,
   AppTasksNewRoute: AppTasksNewRoute,
   AppTasksIndexRoute: AppTasksIndexRoute,
 }

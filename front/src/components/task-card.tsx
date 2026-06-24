@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { Clock, MapPin, Users, Wallet } from "lucide-react";
 import { StatusBadge } from "./status-badge";
-import type { Task } from "@/lib/mock-data";
+import type { ApiTask } from "@/lib/types";
 import { toman, toFa } from "@/lib/fa";
 
-export function TaskCard({ task, showApply = false }: { task: Task; showApply?: boolean }) {
+export function TaskCard({ task, showApply = false }: { task: ApiTask; showApply?: boolean }) {
+  const postedDate = task.createdAt?.slice(0, 10) ?? "";
   return (
     <Link
       to="/app/tasks/$id"
@@ -14,9 +15,9 @@ export function TaskCard({ task, showApply = false }: { task: Task; showApply?: 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="font-mono">{task.id}</span>
+            <span className="font-mono">{task.id.slice(0, 8)}</span>
             <span>·</span>
-            <span>{task.postedAgo}</span>
+            <span>{postedDate}</span>
           </div>
           <h3 className="mt-1.5 line-clamp-1 text-base font-semibold tracking-tight text-foreground group-hover:text-primary">
             {task.title}
@@ -27,9 +28,13 @@ export function TaskCard({ task, showApply = false }: { task: Task; showApply?: 
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
-        <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{task.city}</span>
-        <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" />مهلت: {task.deadline}</span>
-        <span className="inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />{toFa(task.applicants)} متقاضی</span>
+        {task.city && (
+          <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{task.city.title}</span>
+        )}
+        {task.deadline && (
+          <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" />مهلت: {task.deadline.slice(0, 10)}</span>
+        )}
+        <span className="inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />{toFa(task.applicantCount ?? 0)} متقاضی</span>
         <span className="ms-auto inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-2 py-1 text-sm font-semibold text-primary">
           <Wallet className="h-3.5 w-3.5" />{toman(task.budget)}
         </span>

@@ -35,3 +35,4 @@ backend/.env
 *.sw?
 CLAUDE.md
 s.txt
+/prompts

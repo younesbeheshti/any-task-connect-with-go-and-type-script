@@ -14,12 +14,17 @@ import (
 	"github.com/younesbeheshti/any-task-connect/backend/configs"
 	_ "github.com/younesbeheshti/any-task-connect/backend/docs"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/api"
+	adminhandler "github.com/younesbeheshti/any-task-connect/backend/internal/admin/handler"
+	adminservice "github.com/younesbeheshti/any-task-connect/backend/internal/admin/service"
 	appinfra "github.com/younesbeheshti/any-task-connect/backend/internal/application/infra"
 	appservice "github.com/younesbeheshti/any-task-connect/backend/internal/application/service"
 	authinfra "github.com/younesbeheshti/any-task-connect/backend/internal/auth/infra"
 	authservice "github.com/younesbeheshti/any-task-connect/backend/internal/auth/service"
 	catinfra "github.com/younesbeheshti/any-task-connect/backend/internal/category/infra"
 	catservice "github.com/younesbeheshti/any-task-connect/backend/internal/category/service"
+	chatinfra "github.com/younesbeheshti/any-task-connect/backend/internal/chat/infra"
+	chatservice "github.com/younesbeheshti/any-task-connect/backend/internal/chat/service"
+	chathandler "github.com/younesbeheshti/any-task-connect/backend/internal/chat/handler"
 	cityinfra "github.com/younesbeheshti/any-task-connect/backend/internal/city/infra"
 	cityservice "github.com/younesbeheshti/any-task-connect/backend/internal/city/service"
 	dashservice "github.com/younesbeheshti/any-task-connect/backend/internal/dashboard/service"
@@ -28,8 +33,14 @@ import (
 	auditservice "github.com/younesbeheshti/any-task-connect/backend/internal/audit/service"
 	ledgerinfra "github.com/younesbeheshti/any-task-connect/backend/internal/ledger/infra"
 	ledgerservice "github.com/younesbeheshti/any-task-connect/backend/internal/ledger/service"
+	notifinfra "github.com/younesbeheshti/any-task-connect/backend/internal/notification/infra"
+	notifservice "github.com/younesbeheshti/any-task-connect/backend/internal/notification/service"
+	notifhandler "github.com/younesbeheshti/any-task-connect/backend/internal/notification/handler"
 	paymentinfra "github.com/younesbeheshti/any-task-connect/backend/internal/payment/infra"
 	paymenthandler "github.com/younesbeheshti/any-task-connect/backend/internal/payment/handler"
+	ratinginfra "github.com/younesbeheshti/any-task-connect/backend/internal/rating/infra"
+	ratingservice "github.com/younesbeheshti/any-task-connect/backend/internal/rating/service"
+	ratinghandler "github.com/younesbeheshti/any-task-connect/backend/internal/rating/handler"
 	revenueinfra "github.com/younesbeheshti/any-task-connect/backend/internal/revenue/infra"
 	revenueservice "github.com/younesbeheshti/any-task-connect/backend/internal/revenue/service"
 	revenuehandler "github.com/younesbeheshti/any-task-connect/backend/internal/revenue/handler"
@@ -128,6 +139,9 @@ func Run() error {
 	revenueRepo := revenueinfra.NewGormRepository(db.DB)
 	withdrawRepo := withdrawinfra.NewGormRepository(db.DB)
 	auditRepo := auditinfra.NewGormRepository(db.DB)
+	chatRepo := chatinfra.NewGormRepository(db.DB)
+	notifRepo := notifinfra.NewGormRepository(db.DB)
+	ratingRepo := ratinginfra.NewGormRepository(db.DB)
 
 	// Services.
 	authSvc := authservice.NewAuthService(
@@ -152,6 +166,11 @@ func Run() error {
 
 	withdrawSvc := withdrawservice.NewWithdrawService(withdrawRepo, walletRepo, db.DB, publisher)
 
+	chatSvc := chatservice.NewChatService(chatRepo)
+	notifSvc := notifservice.NewNotificationService(notifRepo)
+	ratingSvc := ratingservice.NewReviewService(ratingRepo)
+	adminSvc := adminservice.NewAdminService(userRepo, txRepo, db.DB)
+
 	// Wire wallet service into task service.
 	taskSvc.SetWalletService(walletSvc)
 
@@ -161,9 +180,14 @@ func Run() error {
 	paymentH := paymenthandler.NewHandler(txRepo, walletRepo)
 	revenueH := revenuehandler.NewHandler(revenueSvc)
 	withdrawH := withdrawhandler.NewHandler(withdrawSvc)
+	chatH := chathandler.NewHandler(chatSvc)
+	notifH := notifhandler.NewHandler(notifSvc)
+	ratingH := ratinghandler.NewHandler(ratingSvc)
+	adminH := adminhandler.NewHandler(adminSvc)
 
 	handlers := api.NewHandlers(authSvc, userSvc, catSvc, citySvc, taskSvc, appSvc, dashSvc,
-		walletH, paymentH, revenueH, withdrawH, v)
+		walletH, paymentH, revenueH, withdrawH,
+		chatH, notifH, ratingH, adminH, v)
 	healthHandler := health.NewHandler(db, rdb, mq)
 
 	srv := server.New(server.Dependencies{
