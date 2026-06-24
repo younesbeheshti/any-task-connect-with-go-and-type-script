@@ -36,3 +36,4 @@ backend/.env
 CLAUDE.md
 s.txt
 /prompts
+/graphify-out
