@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/common"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/payment/domain"
+	paymentrepo "github.com/younesbeheshti/any-task-connect/backend/internal/payment/repository"
 	"gorm.io/gorm"
 )
 
@@ -18,7 +19,7 @@ func NewGormRepository(db *gorm.DB) *GormRepository {
 	return &GormRepository{db: db}
 }
 
-func (r *GormRepository) WithTx(tx *gorm.DB) *GormRepository {
+func (r *GormRepository) WithTx(tx *gorm.DB) paymentrepo.Repository {
 	return &GormRepository{db: tx}
 }
 

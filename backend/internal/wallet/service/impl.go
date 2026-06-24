@@ -76,10 +76,7 @@ func (s *WalletService) GetWallet(ctx context.Context, userID uuid.UUID) (*walle
 			return &cached, nil
 		}
 	}
-	wallet, err := s.walletRepo.GetByUserID(ctx, userID)
-	if err == common.ErrNotFound {
-		return nil, apperrors.New("NOT_FOUND", "کیف پول یافت نشد", 404, apperrors.ErrNotFound)
-	}
+	wallet, err := s.EnsureWallet(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +177,7 @@ func (s *WalletService) LockEscrow(ctx context.Context, input paymentdomain.Escr
 	total := input.Budget + input.Fee
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		repo := s.walletRepo.WithTx(tx)
-		txRepo := s.txRepo
+		txRepo := s.txRepo.WithTx(tx)
 
 		wallet, err := repo.GetByUserIDForUpdate(ctx, input.RequesterID)
 		if err == common.ErrNotFound {
@@ -255,7 +252,7 @@ func (s *WalletService) ReleaseEscrow(ctx context.Context, input paymentdomain.E
 
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		repo := s.walletRepo.WithTx(tx)
-		txRepo := s.txRepo
+		txRepo := s.txRepo.WithTx(tx)
 
 		requesterWallet, err := repo.GetByUserIDForUpdate(ctx, input.RequesterID)
 		if err != nil {
@@ -354,7 +351,7 @@ func (s *WalletService) RefundEscrow(ctx context.Context, taskID, requesterID uu
 	total := amount + fee
 	return s.db.Transaction(func(tx *gorm.DB) error {
 		repo := s.walletRepo.WithTx(tx)
-		txRepo := s.txRepo
+		txRepo := s.txRepo.WithTx(tx)
 
 		wallet, err := repo.GetByUserIDForUpdate(ctx, requesterID)
 		if err != nil {

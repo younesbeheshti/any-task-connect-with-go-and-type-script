@@ -62,4 +62,4 @@ type TaskTimelineModel struct {
 	CreatedAt  time.Time
 }
 
-func (TaskTimelineModel) TableName() string { return "task_timelines" }
+func (TaskTimelineModel) TableName() string { return "task_timeline" }

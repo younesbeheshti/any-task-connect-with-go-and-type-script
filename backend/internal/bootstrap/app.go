@@ -150,7 +150,7 @@ func Run() error {
 		publisher, cache, db.DB, cfg.Platform.CommissionPercent,
 	)
 
-	withdrawSvc := withdrawservice.NewWithdrawService(withdrawRepo, publisher)
+	withdrawSvc := withdrawservice.NewWithdrawService(withdrawRepo, walletRepo, db.DB, publisher)
 
 	// Wire wallet service into task service.
 	taskSvc.SetWalletService(walletSvc)

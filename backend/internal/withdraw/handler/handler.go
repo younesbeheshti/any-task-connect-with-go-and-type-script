@@ -21,11 +21,11 @@ func NewHandler(svc service.Service) *Handler {
 	return &Handler{svc: svc}
 }
 
+// createWithdrawRequest matches POST /wallet/withdraw per frontend contract.
 type createWithdrawRequest struct {
-	WalletID    string `json:"walletId"`
 	Amount      int64  `json:"amount" binding:"required,min=1"`
-	BankAccount string `json:"bankAccount"`
-	ShebaNumber string `json:"shebaNumber"`
+	IBAN        string `json:"iban"`        // frontend contract field
+	BankAccount string `json:"bankAccount"` // alternate field
 	Description string `json:"description"`
 }
 
@@ -40,16 +40,14 @@ func (h *Handler) Create(c *gin.Context) {
 		apiresponse.WriteError(c, err)
 		return
 	}
-	var walletID uuid.UUID
-	if req.WalletID != "" {
-		walletID, _ = uuid.Parse(req.WalletID)
+	sheba := req.IBAN
+	if sheba == "" {
+		sheba = req.BankAccount
 	}
 	input := domain.CreateInput{
 		UserID:      userID,
-		WalletID:    walletID,
 		Amount:      req.Amount,
-		BankAccount: req.BankAccount,
-		ShebaNumber: req.ShebaNumber,
+		ShebaNumber: sheba,
 		Description: req.Description,
 	}
 	w, err := h.svc.CreateWithdraw(c.Request.Context(), input)
