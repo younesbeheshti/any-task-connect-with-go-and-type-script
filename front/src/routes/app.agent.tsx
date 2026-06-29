@@ -19,7 +19,7 @@ function getToken() {
 
 type Task = {
   id: string; title: string; budget: number; status: string;
-  category: { title: string }; city: { title: string }; deadline: string;
+  category: string; city: string; deadline: string;
 };
 type Application = {
   id: string; status: string;
@@ -44,7 +44,7 @@ function AgentDashboard() {
       fetch(`${API_BASE}/v1/me/applications`, { headers: h }).then(r => r.json()).catch(() => null),
     ]).then(([w, t, a]) => {
       if (w && !w.error) setWallet(w);
-      if (t) setOpenTasks(t.tasks ?? []);
+      if (t) setOpenTasks(t.items ?? []);
       if (a) setApps(a.applications ?? a.items ?? []);
     }).finally(() => setLoading(false));
   }, []);
@@ -111,7 +111,7 @@ function AgentDashboard() {
                   className="rounded-2xl border bg-card p-5 shadow-soft hover:border-primary/40 block">
                   <div className="font-semibold line-clamp-1">{t.title}</div>
                   <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{t.city?.title}</span>
+                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{t.city}</span>
                     {t.deadline && <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{t.deadline?.slice(0, 10)}</span>}
                   </div>
                   <div className="mt-2 font-semibold text-primary text-sm">{toman(t.budget)}</div>

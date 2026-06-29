@@ -162,18 +162,16 @@ func (c *Client) HealthCheck(ctx context.Context) error {
 	if conn == nil || conn.IsClosed() {
 		return fmt.Errorf("rabbitmq connection closed")
 	}
-	ch, err := c.Channel()
+	// Probe liveness by opening a dedicated short-lived channel rather than reusing
+	// the shared channel. A channel-level exception (e.g. a passive declare of a
+	// missing queue) closes the channel it runs on, so probing the shared channel
+	// would break event publishing. Opening a channel already requires a live
+	// connection and a responsive broker, making it a sufficient check.
+	ch, err := conn.Channel()
 	if err != nil {
-		return err
+		return fmt.Errorf("rabbitmq channel open failed: %w", err)
 	}
-	_, err = ch.QueueDeclarePassive(
-		"healthcheck",
-		false, false, true, false, nil,
-	)
-	if err != nil {
-		// Passive declare fails if queue doesn't exist — connection is still alive.
-		return nil
-	}
+	_ = ch.Close()
 	return nil
 }
 

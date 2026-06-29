@@ -20,7 +20,7 @@ function getToken() {
 
 type Task = {
   id: string; title: string; status: string; budget: number;
-  category: { title: string }; city: { title: string }; deadline: string;
+  category: string; city: string; deadline: string;
   requesterId: string;
 };
 
@@ -36,7 +36,7 @@ function AcceptedPage() {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())
-      .then(d => setTasks(d.tasks ?? []))
+      .then(d => setTasks(d.items ?? []))
       .catch(() => setError("خطا در بارگذاری"))
       .finally(() => setLoading(false));
   }, []);
@@ -88,7 +88,7 @@ function AcceptedPage() {
                 <StatusBadge status={t.status} />
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{t.city?.title}</span>
+                <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{t.city}</span>
                 <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{t.deadline?.slice(0, 10)}</span>
                 <span className="flex items-center gap-1 text-primary font-medium"><Wallet className="h-3 w-3" />{toman(t.budget)}</span>
               </div>

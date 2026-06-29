@@ -1,10 +1,14 @@
 package apiresponse
 
 import (
+	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	govalidator "github.com/go-playground/validator/v10"
 	apperrors "github.com/younesbeheshti/any-task-connect/backend/pkg/errors"
 	"github.com/younesbeheshti/any-task-connect/backend/pkg/validator"
 )
@@ -43,6 +47,31 @@ func mapError(err error) (int, ErrorDetail) {
 			Code:    appErr.Code,
 			Message: appErr.Message,
 			Fields:  appErr.Fields,
+		}
+	}
+
+	// gin's c.ShouldBindJSON validates via go-playground tags and returns raw
+	// ValidationErrors; surface them as a 400 with per-field info instead of a 500.
+	var bindErrs govalidator.ValidationErrors
+	if errors.As(err, &bindErrs) {
+		fields := make(map[string]string, len(bindErrs))
+		for _, fe := range bindErrs {
+			fields[strings.ToLower(fe.Field())] = "فیلد الزامی یا نامعتبر است"
+		}
+		return http.StatusBadRequest, ErrorDetail{
+			Code:    "VALIDATION_FAILED",
+			Message: "اطلاعات وارد شده معتبر نیست",
+			Fields:  fields,
+		}
+	}
+
+	// Malformed or empty JSON request body → 400, not 500.
+	var syntaxErr *json.SyntaxError
+	var typeErr *json.UnmarshalTypeError
+	if errors.As(err, &syntaxErr) || errors.As(err, &typeErr) || errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+		return http.StatusBadRequest, ErrorDetail{
+			Code:    "INVALID_BODY",
+			Message: "بدنه درخواست نامعتبر است",
 		}
 	}
 

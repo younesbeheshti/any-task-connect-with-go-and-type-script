@@ -69,9 +69,7 @@ func (h *Handler) GetStatistics(c *gin.Context) {
 }
 
 type topUpRequest struct {
-	Amount    int64   `json:"amount" binding:"required,min=1"`
-	ReturnURL string  `json:"returnUrl"`
-	CardID    *string `json:"cardId"`
+	Amount int64 `json:"amount" binding:"required,min=1"`
 }
 
 func (h *Handler) TopUp(c *gin.Context) {
@@ -85,19 +83,15 @@ func (h *Handler) TopUp(c *gin.Context) {
 		apiresponse.WriteError(c, err)
 		return
 	}
-	var cardID *uuid.UUID
-	if req.CardID != nil {
-		id, err := uuid.Parse(*req.CardID)
-		if err == nil {
-			cardID = &id
-		}
-	}
-	url, err := h.svc.TopUp(c.Request.Context(), userID, req.Amount, cardID, req.ReturnURL)
+	wallet, tx, err := h.svc.TopUp(c.Request.Context(), userID, req.Amount)
 	if err != nil {
 		apiresponse.WriteError(c, err)
 		return
 	}
-	apiresponse.JSON(c, http.StatusOK, gin.H{"paymentUrl": url})
+	apiresponse.JSON(c, http.StatusOK, gin.H{
+		"wallet":      wallet,
+		"transaction": tx,
+	})
 }
 
 func (h *Handler) GetAdminOverview(c *gin.Context) {

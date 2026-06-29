@@ -33,6 +33,28 @@ func AuthJWT(auth *authservice.AuthService) gin.HandlerFunc {
 	}
 }
 
+// OptionalAuthJWT sets the user context when a valid token is present, but never
+// aborts when it is missing or invalid. Use on public routes that adjust their
+// response for authenticated users (e.g. "mine" filters on the task list).
+func OptionalAuthJWT(auth *authservice.AuthService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := extractBearerToken(c.GetHeader("Authorization"))
+		if token == "" {
+			c.Next()
+			return
+		}
+		claims, err := auth.ValidateAccessToken(c.Request.Context(), token)
+		if err != nil {
+			c.Next()
+			return
+		}
+		c.Set(UserIDKey, claims.UserID.String())
+		c.Set(RoleKey, claims.Role)
+		c.Set(JTIKey, claims.JTI)
+		c.Next()
+	}
+}
+
 // GetAuthContext returns authenticated user ID and JTI.
 func GetAuthContext(c *gin.Context) (uuid.UUID, string) {
 	userID, _ := uuid.Parse(c.GetString(UserIDKey))

@@ -22,6 +22,9 @@ type RegisterInput struct {
 	Email    *string
 	Password string
 	Role     common.Role
+	// CityID and NationalID are required for agents (identity verification).
+	CityID     *uuid.UUID
+	NationalID *string
 }
 
 // LoginInput holds login credentials.

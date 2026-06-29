@@ -86,16 +86,91 @@ func (s *WalletService) GetWallet(ctx context.Context, userID uuid.UUID) (*walle
 	return wallet, nil
 }
 
-func (s *WalletService) TopUp(ctx context.Context, userID uuid.UUID, amount int64, cardID *uuid.UUID, returnURL string) (string, error) {
+// maxTopUpAmount caps a single mock top-up (Toman). Guards against absurd amounts
+// until a real payment gateway with its own limits replaces this mock flow.
+const maxTopUpAmount int64 = 500_000_000
+
+// TopUp simulates a successful payment and credits the wallet immediately, recording
+// a COMPLETED transaction and a double-entry ledger pair. Replace with a real gateway
+// (return a payment URL + confirm callback) before production.
+func (s *WalletService) TopUp(ctx context.Context, userID uuid.UUID, amount int64) (*walletdomain.Wallet, *paymentdomain.Transaction, error) {
 	if amount <= 0 {
-		return "", apperrors.New("INVALID_AMOUNT", "مبلغ شارژ نامعتبر است", 422, apperrors.ErrValidation)
+		return nil, nil, apperrors.New("INVALID_AMOUNT", "مبلغ شارژ نامعتبر است", 422, apperrors.ErrValidation)
 	}
-	_, err := s.EnsureWallet(ctx, userID)
+	if amount > maxTopUpAmount {
+		return nil, nil, apperrors.New("INVALID_AMOUNT", "مبلغ شارژ بیش از حد مجاز است", 422, apperrors.ErrValidation)
+	}
+
+	var (
+		wallet *walletdomain.Wallet
+		topupTx *paymentdomain.Transaction
+	)
+	err := s.db.Transaction(func(tx *gorm.DB) error {
+		repo := s.walletRepo.WithTx(tx)
+		txRepo := s.txRepo.WithTx(tx)
+
+		w, err := repo.GetByUserIDForUpdate(ctx, userID)
+		if err == common.ErrNotFound {
+			w, err = s.createWalletInTx(ctx, repo, userID)
+			if err != nil {
+				return err
+			}
+			// Re-lock the freshly created row for update.
+			w, err = repo.GetByUserIDForUpdate(ctx, userID)
+		}
+		if err != nil {
+			return err
+		}
+
+		w.AvailableBalance += amount
+		if err := repo.Update(ctx, w); err != nil {
+			return err
+		}
+
+		topupTx = &paymentdomain.Transaction{
+			ID:              uuid.New(),
+			WalletID:        w.ID,
+			Amount:          amount,
+			Currency:        "IRT",
+			Type:            paymentdomain.TransactionTypeTopup,
+			Status:          paymentdomain.TransactionStatusCompleted,
+			ReferenceNumber: fmt.Sprintf("TXN-%s", uuid.New().String()[:8]),
+			Description:     "شارژ کیف پول (درگاه آزمایشی)",
+		}
+		if err := txRepo.Create(ctx, topupTx); err != nil {
+			return err
+		}
+
+		if s.ledger != nil {
+			entries := []ledgerdomain.Entry{
+				{
+					ID:            uuid.New(),
+					TransactionID: topupTx.ID,
+					Account:       ledgerdomain.AccountSystem,
+					Debit:         amount,
+					Credit:        0,
+					BalanceAfter:  0,
+				},
+				{
+					ID:            uuid.New(),
+					TransactionID: topupTx.ID,
+					Account:       ledgerdomain.AccountUserWallet,
+					Debit:         0,
+					Credit:        amount,
+					BalanceAfter:  w.AvailableBalance,
+				},
+			}
+			_ = s.ledger.Record(ctx, entries)
+		}
+
+		s.invalidateCache(ctx, userID)
+		wallet = w
+		return nil
+	})
 	if err != nil {
-		return "", err
+		return nil, nil, err
 	}
-	// Placeholder: real payment gateway integration would go here.
-	return "https://payment.example.com/pay/" + uuid.New().String(), nil
+	return wallet, topupTx, nil
 }
 
 func (s *WalletService) Withdraw(ctx context.Context, userID uuid.UUID, amount int64, iban string) error {

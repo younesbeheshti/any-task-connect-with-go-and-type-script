@@ -11,7 +11,7 @@ import (
 type Service interface {
 	Submit(ctx context.Context, input domain.SubmitApplicationInput) (*domain.Application, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*domain.Application, error)
-	ListByTask(ctx context.Context, taskID, requesterID uuid.UUID) ([]domain.Application, error)
+	ListByTask(ctx context.Context, taskPublicID string, requesterID uuid.UUID) ([]domain.Application, error)
 	ListByAgent(ctx context.Context, agentID uuid.UUID) ([]domain.Application, error)
 	Accept(ctx context.Context, applicationID, requesterID uuid.UUID) (*domain.Application, error)
 	Reject(ctx context.Context, applicationID, requesterID uuid.UUID) (*domain.Application, error)

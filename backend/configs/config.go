@@ -18,10 +18,17 @@ type Config struct {
 	CORS     CORSConfig     `mapstructure:"cors"`
 	Server   ServerConfig   `mapstructure:"server"`
 	Platform PlatformConfig `mapstructure:"platform"`
+	Storage  StorageConfig  `mapstructure:"storage"`
 }
 
 type PlatformConfig struct {
 	CommissionPercent int64 `mapstructure:"commission_percent"`
+}
+
+// StorageConfig configures file upload storage.
+type StorageConfig struct {
+	LocalDir string `mapstructure:"local_dir"` // directory where uploaded files are written
+	MaxSize  int64  `mapstructure:"max_size"`  // max single-file size in bytes
 }
 
 type AppConfig struct {
@@ -141,6 +148,9 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("server.idle_timeout", "60s")
 
 	v.SetDefault("platform.commission_percent", 8)
+
+	v.SetDefault("storage.local_dir", "./uploads")
+	v.SetDefault("storage.max_size", 52428800) // 50 MiB
 }
 
 func bindEnv(v *viper.Viper) {
@@ -171,6 +181,9 @@ func bindEnv(v *viper.Viper) {
 	_ = v.BindEnv("jwt.refresh_ttl", "JWT_REFRESH_TTL")
 
 	_ = v.BindEnv("platform.commission_percent", "PLATFORM_COMMISSION_PERCENT")
+
+	_ = v.BindEnv("storage.local_dir", "STORAGE_LOCAL_DIR")
+	_ = v.BindEnv("storage.max_size", "STORAGE_MAX_SIZE")
 }
 
 // Validate checks required configuration values.

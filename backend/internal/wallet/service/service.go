@@ -13,7 +13,8 @@ import (
 type Service interface {
 	EnsureWallet(ctx context.Context, userID uuid.UUID) (*walletdomain.Wallet, error)
 	GetWallet(ctx context.Context, userID uuid.UUID) (*walletdomain.Wallet, error)
-	TopUp(ctx context.Context, userID uuid.UUID, amount int64, cardID *uuid.UUID, returnURL string) (paymentURL string, err error)
+	// TopUp simulates a successful payment (mock gateway) and credits the wallet immediately.
+	TopUp(ctx context.Context, userID uuid.UUID, amount int64) (*walletdomain.Wallet, *paymentdomain.Transaction, error)
 	Withdraw(ctx context.Context, userID uuid.UUID, amount int64, iban string) error
 	GetTransactions(ctx context.Context, userID uuid.UUID, filter paymentdomain.TransactionFilter, pg common.PaginationParams) (*common.PaginatedResult[paymentdomain.Transaction], error)
 	GetStatistics(ctx context.Context, userID uuid.UUID) (*WalletStats, error)

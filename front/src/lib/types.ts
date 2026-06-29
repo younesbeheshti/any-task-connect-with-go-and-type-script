@@ -1,16 +1,21 @@
+// Mirrors backend TaskResponse (internal/task/handler/dto.go): flat strings for
+// category/city, API-status values, and a denormalized applicantsCount.
 export type ApiTask = {
   id: string;
   title: string;
   description: string;
-  status: string;
+  category: string;
+  city: string;
   budget: number;
+  currency?: string;
+  status: string; // API status: posted | awaiting_applicants | accepted | in_progress | completed | awaiting_verification | paid | cancelled
   deadline: string | null;
-  applicantCount: number;
+  requesterId: string;
+  assignedAgentId: string | null;
+  applicantsCount: number;
+  attachmentUrls?: string[];
   createdAt: string;
-  category: { id: string; title: string } | null;
-  city: { id: string; title: string } | null;
-  requester?: { id: string; fullName: string } | null;
-  assignedAgent?: { id: string; fullName: string } | null;
+  updatedAt?: string;
 };
 
 export type ApiCategory = { id: string; title: string };

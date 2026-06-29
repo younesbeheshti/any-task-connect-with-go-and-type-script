@@ -26,8 +26,14 @@ func NewApplicationService(repo repository.Repository, taskRepo taskrepo.Reposit
 }
 
 func (s *ApplicationService) Submit(ctx context.Context, input domain.SubmitApplicationInput) (*domain.Application, error) {
-	// Check task exists and is open.
-	task, err := s.taskRepo.GetByID(ctx, input.TaskID)
+	// TODO(production): gate applications on agent identity verification. Agents
+	// register with city + national ID and verification_status "pending"; before
+	// going live, reject Submit when the agent is not yet verified (load the user
+	// and check VerificationStatus == "verified"), with a Persian error. Left open
+	// for now so agents can apply immediately during development.
+
+	// Resolve the public task ID (e.g. "TB-7") to the internal task and ensure it is open.
+	task, err := s.taskRepo.GetByPublicID(ctx, input.TaskPublicID)
 	if errors.Is(err, common.ErrNotFound) {
 		return nil, apperrors.New("NOT_FOUND", "تسک یافت نشد", 404, apperrors.ErrNotFound)
 	}
@@ -39,14 +45,14 @@ func (s *ApplicationService) Submit(ctx context.Context, input domain.SubmitAppl
 	}
 
 	// Check duplicate.
-	existing, err := s.repo.GetByTaskAndAgent(ctx, input.TaskID, input.AgentID)
+	existing, err := s.repo.GetByTaskAndAgent(ctx, task.ID, input.AgentID)
 	if err == nil && existing != nil {
 		return nil, apperrors.New("CONFLICT", "قبلاً برای این تسک پیشنهاد ثبت کرده‌اید", 409, apperrors.ErrConflict)
 	}
 
 	app := &domain.Application{
 		ID:                     uuid.New(),
-		TaskID:                 input.TaskID,
+		TaskID:                 task.ID,
 		AgentID:                input.AgentID,
 		ProposalMessage:        input.ProposalMessage,
 		ExpectedCompletionTime: input.ExpectedCompletionTime,
@@ -59,6 +65,8 @@ func (s *ApplicationService) Submit(ctx context.Context, input domain.SubmitAppl
 	if err := s.repo.Create(ctx, app); err != nil {
 		return nil, err
 	}
+	// Keep the task's denormalized applicant count in sync (best-effort).
+	_ = s.taskRepo.IncrementApplicantCount(ctx, task.ID, 1)
 	return app, nil
 }
 
@@ -70,8 +78,8 @@ func (s *ApplicationService) GetByID(ctx context.Context, id uuid.UUID) (*domain
 	return app, err
 }
 
-func (s *ApplicationService) ListByTask(ctx context.Context, taskID, requesterID uuid.UUID) ([]domain.Application, error) {
-	task, err := s.taskRepo.GetByID(ctx, taskID)
+func (s *ApplicationService) ListByTask(ctx context.Context, taskPublicID string, requesterID uuid.UUID) ([]domain.Application, error) {
+	task, err := s.taskRepo.GetByPublicID(ctx, taskPublicID)
 	if errors.Is(err, common.ErrNotFound) {
 		return nil, apperrors.New("NOT_FOUND", "تسک یافت نشد", 404, apperrors.ErrNotFound)
 	}
@@ -81,7 +89,7 @@ func (s *ApplicationService) ListByTask(ctx context.Context, taskID, requesterID
 	if task.RequesterID != requesterID {
 		return nil, apperrors.New("FORBIDDEN", "دسترسی مجاز نیست", 403, apperrors.ErrForbidden)
 	}
-	return s.repo.ListByTask(ctx, taskID)
+	return s.repo.ListByTask(ctx, task.ID)
 }
 
 func (s *ApplicationService) ListByAgent(ctx context.Context, agentID uuid.UUID) ([]domain.Application, error) {
@@ -121,8 +129,8 @@ func (s *ApplicationService) Accept(ctx context.Context, applicationID, requeste
 	// Reject all other pending applications for this task.
 	_ = s.repo.UpdateStatusByTask(ctx, app.TaskID, app.ID, domain.ApplicationStatusRejected)
 
-	// Transition task to ASSIGNED.
-	if err := s.taskRepo.UpdateStatus(ctx, task.ID, taskdomain.TaskStatusAssigned); err != nil {
+	// Transition task to ASSIGNED and link the accepted agent.
+	if err := s.taskRepo.AssignAgent(ctx, task.ID, app.AgentID, taskdomain.TaskStatusAssigned); err != nil {
 		return nil, err
 	}
 

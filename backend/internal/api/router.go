@@ -16,6 +16,7 @@ import (
 	"github.com/younesbeheshti/any-task-connect/backend/internal/common/middleware"
 	dashhandler "github.com/younesbeheshti/any-task-connect/backend/internal/dashboard/handler"
 	dashservice "github.com/younesbeheshti/any-task-connect/backend/internal/dashboard/service"
+	filehandler "github.com/younesbeheshti/any-task-connect/backend/internal/file/handler"
 	notifhandler "github.com/younesbeheshti/any-task-connect/backend/internal/notification/handler"
 	paymenthandler "github.com/younesbeheshti/any-task-connect/backend/internal/payment/handler"
 	ratinghandler "github.com/younesbeheshti/any-task-connect/backend/internal/rating/handler"
@@ -46,6 +47,7 @@ type Handlers struct {
 	Notification *notifhandler.Handler
 	Rating       *ratinghandler.Handler
 	Admin        *adminhandler.Handler
+	File         *filehandler.Handler
 }
 
 // NewHandlers creates API handlers.
@@ -65,6 +67,7 @@ func NewHandlers(
 	notification *notifhandler.Handler,
 	rating *ratinghandler.Handler,
 	admin *adminhandler.Handler,
+	file *filehandler.Handler,
 	v *validator.Validator,
 ) *Handlers {
 	return &Handlers{
@@ -83,6 +86,7 @@ func NewHandlers(
 		Notification: notification,
 		Rating:       rating,
 		Admin:        admin,
+		File:         file,
 	}
 }
 
@@ -98,7 +102,7 @@ func RegisterRoutes(r *gin.Engine, h *Handlers, auth *authservice.AuthService) {
 	v1.GET("/categories/:id", h.Category.GetByID)
 	v1.GET("/cities", h.City.List)
 	v1.GET("/cities/:id", h.City.GetByID)
-	v1.GET("/tasks", h.Task.List)
+	v1.GET("/tasks", middleware.OptionalAuthJWT(auth), h.Task.List)
 	v1.GET("/tasks/:id", h.Task.GetByPublicID)
 
 	// Public reviews + user profiles.
@@ -136,6 +140,10 @@ func RegisterRoutes(r *gin.Engine, h *Handlers, auth *authservice.AuthService) {
 
 	// Dashboard user stats.
 	protected.GET("/dashboard/stats", h.Dashboard.GetUserStats)
+
+	// File upload + download (auth required).
+	protected.POST("/files", h.File.Upload)
+	protected.GET("/files/:id", h.File.Download)
 
 	// Wallet routes.
 	protected.GET("/wallet", h.Wallet.GetWallet)

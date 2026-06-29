@@ -15,6 +15,10 @@ type Repository interface {
 	GetByPublicID(ctx context.Context, publicID string) (*domain.Task, error)
 	Update(ctx context.Context, task *domain.Task) error
 	UpdateStatus(ctx context.Context, id uuid.UUID, status domain.TaskStatus) error
+	// AssignAgent sets the assigned agent and status atomically (used on application accept).
+	AssignAgent(ctx context.Context, id, agentID uuid.UUID, status domain.TaskStatus) error
+	// IncrementApplicantCount bumps the denormalized applicant_count by delta (e.g. +1 on apply).
+	IncrementApplicantCount(ctx context.Context, id uuid.UUID, delta int) error
 	List(ctx context.Context, filter domain.TaskFilter, pg common.PaginationParams) ([]domain.Task, int64, error)
 	SoftDelete(ctx context.Context, id uuid.UUID) error
 

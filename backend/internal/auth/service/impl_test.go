@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -89,9 +90,12 @@ func TestOTPVerifyFlow(t *testing.T) {
 	svc := setupAuthTest(t)
 	ctx := context.Background()
 
+	cityID := uuid.New()
+	nationalID := "0012345678"
 	_, _, err := svc.Register(ctx, authdomain.RegisterInput{
 		FullName: "OTP User", Phone: "09120000002",
 		Password: "Secure1!", Role: common.RoleAgent,
+		CityID: &cityID, NationalID: &nationalID,
 	})
 	require.NoError(t, err)
 

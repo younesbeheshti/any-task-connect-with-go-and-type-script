@@ -23,8 +23,8 @@ func NewHandler(svc *service.ApplicationService) *Handler {
 }
 
 type submitApplicationRequest struct {
-	ProposalMessage string `json:"message" binding:"required"`
-	ProposedPrice   *int64 `json:"price"`
+	ProposalMessage string `json:"proposalMessage" binding:"required"`
+	ProposedPrice   *int64 `json:"proposedPrice"`
 	ETA             string `json:"eta"`
 }
 
@@ -35,11 +35,7 @@ func (h *Handler) Submit(c *gin.Context) {
 		apiresponse.WriteError(c, err)
 		return
 	}
-	taskID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		apiresponse.WriteError(c, apperrors.New("INVALID_FIELD", "شناسه تسک نامعتبر است", 400, apperrors.ErrValidation))
-		return
-	}
+	taskPublicID := c.Param("id")
 	var req submitApplicationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		apiresponse.WriteError(c, err)
@@ -47,7 +43,7 @@ func (h *Handler) Submit(c *gin.Context) {
 	}
 
 	input := domain.SubmitApplicationInput{
-		TaskID:          taskID,
+		TaskPublicID:    taskPublicID,
 		AgentID:         agentID,
 		ProposalMessage: req.ProposalMessage,
 		ProposedPrice:   req.ProposedPrice,
@@ -81,12 +77,8 @@ func (h *Handler) ListByTask(c *gin.Context) {
 		apiresponse.WriteError(c, err)
 		return
 	}
-	taskID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		apiresponse.JSON(c, http.StatusBadRequest, gin.H{"error": gin.H{"code": "INVALID_ID", "message": "شناسه تسک نامعتبر است"}})
-		return
-	}
-	apps, err := h.svc.ListByTask(c.Request.Context(), taskID, requesterID)
+	taskPublicID := c.Param("id")
+	apps, err := h.svc.ListByTask(c.Request.Context(), taskPublicID, requesterID)
 	if err != nil {
 		apiresponse.WriteError(c, err)
 		return

@@ -105,6 +105,20 @@ func (r *GormRepository) UpdateStatus(ctx context.Context, id uuid.UUID, status 
 		}).Error
 }
 
+func (r *GormRepository) AssignAgent(ctx context.Context, id, agentID uuid.UUID, status domain.TaskStatus) error {
+	return r.db.WithContext(ctx).Model(&TaskModel{}).Where("id = ?", id).
+		Updates(map[string]any{
+			"assigned_agent_id": agentID,
+			"status":            string(status),
+			"updated_at":        time.Now(),
+		}).Error
+}
+
+func (r *GormRepository) IncrementApplicantCount(ctx context.Context, id uuid.UUID, delta int) error {
+	return r.db.WithContext(ctx).Model(&TaskModel{}).Where("id = ?", id).
+		Update("application_count", gorm.Expr("application_count + ?", delta)).Error
+}
+
 func (r *GormRepository) List(ctx context.Context, filter domain.TaskFilter, pg common.PaginationParams) ([]domain.Task, int64, error) {
 	q := r.db.WithContext(ctx).Model(&TaskModel{}).Preload("Category").Preload("City")
 
@@ -124,8 +138,15 @@ func (r *GormRepository) List(ctx context.Context, filter domain.TaskFilter, pg 
 	if filter.MaxBudget != nil {
 		q = q.Where("tasks.budget <= ?", *filter.MaxBudget)
 	}
-	if filter.Status != nil {
-		q = q.Where("status = ?", string(*filter.Status))
+	if len(filter.Statuses) > 0 {
+		vals := make([]string, len(filter.Statuses))
+		for i, s := range filter.Statuses {
+			vals[i] = string(s)
+		}
+		q = q.Where("status IN ?", vals)
+	}
+	if filter.Mine != nil {
+		q = q.Where("requester_id = ? OR assigned_agent_id = ?", filter.Mine, filter.Mine)
 	}
 	if filter.RequesterID != nil {
 		q = q.Where("requester_id = ?", filter.RequesterID)
@@ -231,8 +252,11 @@ func (r *GormRepository) GetTimeline(ctx context.Context, taskID uuid.UUID) ([]d
 }
 
 func (r *GormRepository) NextPublicID(ctx context.Context) (string, error) {
+	// Count Unscoped (including soft-deleted rows): a soft-deleted task keeps its
+	// public_id reserved in the unique index, so excluding it from the count would
+	// re-issue an existing ID and violate tasks_public_id_key.
 	var count int64
-	if err := r.db.WithContext(ctx).Model(&TaskModel{}).Count(&count).Error; err != nil {
+	if err := r.db.WithContext(ctx).Unscoped().Model(&TaskModel{}).Count(&count).Error; err != nil {
 		return "", fmt.Errorf("next public id: %w", err)
 	}
 	return fmt.Sprintf("TB-%d", count+1), nil

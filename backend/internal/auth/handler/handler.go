@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/auth/domain"
 	authservice "github.com/younesbeheshti/any-task-connect/backend/internal/auth/service"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/common"
@@ -45,11 +46,13 @@ func (h *Handler) RegisterRoutes(rg *gin.RouterGroup) {
 
 // RegisterRequest matches POST /auth/register contract.
 type RegisterRequest struct {
-	FullName string `json:"fullName" validate:"required,min=2,max=200"`
-	Phone    string `json:"phone" validate:"required"`
-	Password string `json:"password" validate:"required,password_strength"`
-	Role     string `json:"role" validate:"required,oneof=requester agent"`
-	Email    string `json:"email,omitempty" validate:"omitempty,email"`
+	FullName   string `json:"fullName" validate:"required,min=2,max=200"`
+	Phone      string `json:"phone" validate:"required"`
+	Password   string `json:"password" validate:"required,password_strength"`
+	Role       string `json:"role" validate:"required,oneof=requester agent"`
+	Email      string `json:"email,omitempty" validate:"omitempty,email"`
+	CityID     string `json:"cityId,omitempty"`
+	NationalID string `json:"nationalId,omitempty"`
 }
 
 // LoginRequest matches POST /auth/login contract (+ optional email).
@@ -125,9 +128,23 @@ func (h *Handler) Register(c *gin.Context) {
 	if req.Email != "" {
 		email = &req.Email
 	}
+	var cityID *uuid.UUID
+	if req.CityID != "" {
+		if id, err := uuid.Parse(req.CityID); err == nil {
+			cityID = &id
+		} else {
+			apiresponse.WriteError(c, apperrors.Validation(map[string]string{"cityId": "شناسه شهر نامعتبر است"}))
+			return
+		}
+	}
+	var nationalID *string
+	if req.NationalID != "" {
+		nationalID = &req.NationalID
+	}
 	tokens, user, err := h.auth.Register(c.Request.Context(), domain.RegisterInput{
 		FullName: req.FullName, Phone: req.Phone, Password: req.Password,
 		Role: common.RoleFromAPI(req.Role), Email: email,
+		CityID: cityID, NationalID: nationalID,
 	})
 
 	if err != nil {

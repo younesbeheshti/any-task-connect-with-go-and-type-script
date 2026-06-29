@@ -21,7 +21,7 @@ type Application = {
   status: string;
   proposalMessage: string;
   createdAt: string;
-  task: { id: string; title: string; budget: number; city: { title: string }; deadline: string; status: string };
+  task: { id: string; title: string; budget: number; city: string; deadline: string; status: string };
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -108,7 +108,7 @@ function MyApplicationsPage() {
                     {a.task?.title ?? "بدون عنوان"}
                   </Link>
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{a.task?.city?.title}</span>
+                    <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{a.task?.city}</span>
                     <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{a.task?.deadline?.slice(0, 10)}</span>
                     <span className="flex items-center gap-1 font-medium text-primary"><Wallet className="h-3 w-3" />{toman(a.task?.budget ?? 0)}</span>
                   </div>

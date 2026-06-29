@@ -71,6 +71,18 @@ function WalletPage() {
   const [showTopUp, setShowTopUp] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
 
+  const refresh = () => {
+    const token = getToken();
+    if (!token) return;
+    Promise.all([
+      apiFetch<WalletData>("/wallet", token).catch(() => null),
+      apiFetch<{ items: TxItem[] }>("/transactions", token).catch(() => ({ items: [] })),
+    ]).then(([walletData, txData]) => {
+      if (walletData) setWallet(walletData);
+      setTxs(txData?.items ?? []);
+    });
+  };
+
   useEffect(() => {
     const token = getToken();
     if (!token) {
@@ -100,12 +112,13 @@ function WalletPage() {
 
   return (
     <div className="space-y-6">
-      {showTopUp && <TopUpModal onClose={() => setShowTopUp(false)} />}
+      {showTopUp && <TopUpModal onClose={() => setShowTopUp(false)} onSuccess={() => {
+        setShowTopUp(false);
+        refresh();
+      }} />}
       {showWithdraw && <WithdrawModal onClose={() => setShowWithdraw(false)} onSuccess={() => {
         setShowWithdraw(false);
-        // re-fetch wallet after withdraw
-        const token = getToken();
-        if (token) apiFetch<WalletData>("/wallet", token).then(setWallet).catch(() => {});
+        refresh();
       }} />}
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -222,23 +235,31 @@ function txStatusLabel(status: string): string {
   return map[status] ?? status;
 }
 
-function TopUpModal({ onClose }: { onClose: () => void }) {
-  const [amount, setAmount] = useState("");
+const PRESET_AMOUNTS = [100_000, 250_000, 500_000, 1_000_000, 2_000_000];
+const MAX_TOPUP = 500_000_000;
+
+function TopUpModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [amount, setAmount] = useState<number | "">("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = getToken();
     if (!token) { setError("احراز هویت لازم است"); return; }
+    const value = typeof amount === "number" ? amount : parseInt(String(amount), 10);
+    if (!value || value <= 0) { setError("مبلغ نامعتبر است"); return; }
+    if (value > MAX_TOPUP) { setError("مبلغ بیش از حد مجاز است"); return; }
     setLoading(true);
     setError(null);
     try {
-      await apiPost("/wallet/topup", token, { amount: parseInt(amount) * 10 });
-      onClose();
+      await apiPost("/wallet/topup", token, { amount: value });
+      setSuccess(true);
+      // Give the user a moment to see the success state, then refresh.
+      setTimeout(onSuccess, 700);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "خطا");
-    } finally {
       setLoading(false);
     }
   };
@@ -250,28 +271,51 @@ function TopUpModal({ onClose }: { onClose: () => void }) {
           <h3 className="font-display text-lg font-semibold">شارژ کیف پول</h3>
           <button onClick={onClose}><X className="h-5 w-5" /></button>
         </div>
-        <form onSubmit={handleSubmit} className="mt-4 space-y-4">
-          <div>
-            <label className="text-sm text-muted-foreground">مبلغ (تومان)</label>
-            <input
-              type="number"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-sm"
-              placeholder="مثال: ۵۰۰۰۰۰"
-              required
-              min={1000}
-            />
+
+        {success ? (
+          <div className="mt-6 rounded-lg border border-success/30 bg-success/5 p-5 text-center text-success">
+            کیف پول با موفقیت شارژ شد ✓
           </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg gradient-brand py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            {loading ? "در حال پردازش..." : "ادامه"}
-          </button>
-        </form>
+        ) : (
+          <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+            <div className="grid grid-cols-3 gap-2">
+              {PRESET_AMOUNTS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => { setAmount(preset); setError(null); }}
+                  className={cn(
+                    "rounded-lg border px-2 py-2 text-xs font-semibold tabular-nums transition-colors",
+                    amount === preset ? "border-primary bg-primary/10 text-primary" : "bg-background hover:bg-accent"
+                  )}
+                >
+                  {toman(preset, false)}
+                </button>
+              ))}
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground">مبلغ دلخواه (تومان)</label>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => { setAmount(e.target.value === "" ? "" : parseInt(e.target.value, 10)); setError(null); }}
+                className="mt-1 w-full rounded-lg border bg-background px-3 py-2 text-sm"
+                placeholder="مثال: ۵۰۰۰۰۰"
+                min={1000}
+                max={MAX_TOPUP}
+              />
+            </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            <button
+              type="submit"
+              disabled={loading || !amount}
+              className="w-full rounded-lg gradient-brand py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {loading ? "در حال پردازش..." : "شارژ کیف پول"}
+            </button>
+            <p className="text-center text-xs text-muted-foreground">پرداخت آزمایشی — بلافاصله به موجودی افزوده می‌شود</p>
+          </form>
+        )}
       </div>
     </div>
   );
@@ -291,7 +335,7 @@ function WithdrawModal({ onClose, onSuccess }: { onClose: () => void; onSuccess:
     setError(null);
     try {
       await apiPost("/wallet/withdraw", token, {
-        amount: parseInt(amount) * 10,
+        amount: parseInt(amount),
         shebaNumber: sheba,
       });
       onSuccess();

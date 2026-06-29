@@ -19,7 +19,7 @@ function getToken() {
 type UserStats = { postedTasks: number; completedTasks: number; activeTasks: number; totalApplications: number };
 type WalletData = { availableBalance: number; lockedBalance: number; currency: string };
 type Notification = { id: string; title: string; body: string; isRead: boolean; createdAt: string };
-type Task = { id: string; title: string; status: string; budget: number; category: { title: string }; city: { title: string } };
+type Task = { id: string; title: string; status: string; budget: number; category: string; city: string };
 
 function Dashboard() {
   const { user } = useAuth();
@@ -41,7 +41,7 @@ function Dashboard() {
     ]).then(([s, w, t, n]) => {
       if (s) setStats(s);
       if (w && !w.error) setWallet(w);
-      if (t) setTasks(t.tasks ?? []);
+      if (t) setTasks(t.items ?? []);
       if (n) setNotifs(n.items ?? []);
     }).finally(() => setLoading(false));
   }, []);
@@ -105,7 +105,7 @@ function Dashboard() {
                 <Link key={t.id} to="/app/tasks/$id" params={{ id: t.id }} className="rounded-2xl border bg-card p-5 shadow-soft hover:border-primary/40 block">
                   <div className="font-semibold line-clamp-1">{t.title}</div>
                   <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
-                    <span>{t.category?.title}</span><span>·</span><span>{t.city?.title}</span>
+                    <span>{t.category}</span><span>·</span><span>{t.city}</span>
                     <span>·</span><span className="text-primary font-medium">{toman(t.budget)}</span>
                   </div>
                 </Link>

@@ -28,6 +28,9 @@ import (
 	cityinfra "github.com/younesbeheshti/any-task-connect/backend/internal/city/infra"
 	cityservice "github.com/younesbeheshti/any-task-connect/backend/internal/city/service"
 	dashservice "github.com/younesbeheshti/any-task-connect/backend/internal/dashboard/service"
+	fileinfra "github.com/younesbeheshti/any-task-connect/backend/internal/file/infra"
+	filehandler "github.com/younesbeheshti/any-task-connect/backend/internal/file/handler"
+	fileservice "github.com/younesbeheshti/any-task-connect/backend/internal/file/service"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/health"
 	auditinfra "github.com/younesbeheshti/any-task-connect/backend/internal/audit/infra"
 	auditservice "github.com/younesbeheshti/any-task-connect/backend/internal/audit/service"
@@ -142,6 +145,7 @@ func Run() error {
 	chatRepo := chatinfra.NewGormRepository(db.DB)
 	notifRepo := notifinfra.NewGormRepository(db.DB)
 	ratingRepo := ratinginfra.NewGormRepository(db.DB)
+	fileRepo := fileinfra.NewGormRepository(db.DB)
 
 	// Services.
 	authSvc := authservice.NewAuthService(
@@ -170,6 +174,7 @@ func Run() error {
 	notifSvc := notifservice.NewNotificationService(notifRepo)
 	ratingSvc := ratingservice.NewReviewService(ratingRepo)
 	adminSvc := adminservice.NewAdminService(userRepo, txRepo, db.DB)
+	fileSvc := fileservice.NewFileService(fileRepo, cfg.Storage.LocalDir, cfg.Storage.MaxSize)
 
 	// Wire wallet service into task service.
 	taskSvc.SetWalletService(walletSvc)
@@ -184,10 +189,11 @@ func Run() error {
 	notifH := notifhandler.NewHandler(notifSvc)
 	ratingH := ratinghandler.NewHandler(ratingSvc)
 	adminH := adminhandler.NewHandler(adminSvc)
+	fileH := filehandler.NewHandler(fileSvc)
 
 	handlers := api.NewHandlers(authSvc, userSvc, catSvc, citySvc, taskSvc, appSvc, dashSvc,
 		walletH, paymentH, revenueH, withdrawH,
-		chatH, notifH, ratingH, adminH, v)
+		chatH, notifH, ratingH, adminH, fileH, v)
 	healthHandler := health.NewHandler(db, rdb, mq)
 
 	srv := server.New(server.Dependencies{

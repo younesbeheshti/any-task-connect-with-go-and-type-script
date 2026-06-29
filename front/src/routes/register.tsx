@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { Phone, Lock, User, Mail, ArrowLeft, Briefcase, ClipboardList } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Phone, Lock, User, Mail, ArrowLeft, Briefcase, ClipboardList, MapPin, IdCard } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { AuthAside, Field, roleHome } from "./login";
 import { useRole } from "@/components/role-context";
@@ -8,6 +8,9 @@ import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { toFa } from "@/lib/fa";
 import { cn } from "@/lib/utils";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+type City = { id: string; title: string };
 
 export const Route = createFileRoute("/register")({
   head: () => ({ meta: [{ title: "ثبت‌نام — تسک‌بریج" }] }),
@@ -20,14 +23,29 @@ function Register() {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [cityId, setCityId] = useState("");
+  const [nationalId, setNationalId] = useState("");
+  const [cities, setCities] = useState<City[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const { register } = useAuth();
   const { setRole } = useRole();
   const nav = useNavigate();
 
+  // Agents must pick a city, so load the list once (cheap public endpoint).
+  useEffect(() => {
+    fetch(`${API_BASE}/v1/cities`)
+      .then((r) => r.json())
+      .then((d) => setCities(d.cities ?? d ?? []))
+      .catch(() => {});
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName || !phone || !password) { toast.error("نام، شماره موبایل و رمز عبور الزامی است"); return; }
+    if (selectedRole === "agent") {
+      if (!cityId) { toast.error("انتخاب شهر برای انجام‌دهنده الزامی است"); return; }
+      if (!/^\d{10}$/.test(nationalId)) { toast.error("کد ملی باید ۱۰ رقم باشد"); return; }
+    }
     setSubmitting(true);
     try {
       const u = await register({
@@ -36,6 +54,7 @@ function Register() {
         password,
         role: selectedRole,
         ...(email ? { email } : {}),
+        ...(selectedRole === "agent" ? { cityId, nationalId } : {}),
       });
       setRole(u.role);
       toast.success("حساب شما ساخته شد");
@@ -110,6 +129,38 @@ function Register() {
               value={password}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
             />
+            {selectedRole === "agent" && (
+              <div className="space-y-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <p className="text-xs text-muted-foreground">
+                  برای انجام‌دهنده‌ها احراز هویت لازم است. اطلاعات زیر برای بررسی توسط تیم پشتیبانی استفاده می‌شود.
+                </p>
+                <div>
+                  <label className="mb-1.5 flex items-center gap-1.5 text-sm font-medium">
+                    <MapPin className="h-4 w-4 text-muted-foreground" /> شهر
+                  </label>
+                  <select
+                    value={cityId}
+                    onChange={(e) => setCityId(e.target.value)}
+                    className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">انتخاب شهر…</option>
+                    {cities.map((c) => (
+                      <option key={c.id} value={c.id}>{c.title}</option>
+                    ))}
+                  </select>
+                </div>
+                <Field
+                  icon={IdCard}
+                  label="کد ملی"
+                  placeholder={toFa("۰۰۱۲۳۴۵۶۷۸")}
+                  dir="ltr"
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={nationalId}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNationalId(e.target.value.replace(/\D/g, ""))}
+                />
+              </div>
+            )}
             <p className="text-xs text-muted-foreground">با ادامه ثبت‌نام، با قوانین و حریم خصوصی موافقت می‌کنید.</p>
             <button
               disabled={submitting}

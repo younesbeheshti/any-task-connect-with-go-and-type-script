@@ -93,7 +93,7 @@ func TestApplicationSubmit(t *testing.T) {
 
 	price := int64(700000)
 	app, err := appSvc.Submit(context.Background(), domain.SubmitApplicationInput{
-		TaskID:          task.ID,
+		TaskPublicID:    task.PublicID,
 		AgentID:         agentID,
 		ProposalMessage: "من می‌توانم این کار را انجام دهم",
 		ProposedPrice:   &price,
@@ -114,7 +114,7 @@ func TestApplicationDuplicateReject(t *testing.T) {
 	require.NoError(t, db.Exec(`INSERT INTO users (id, full_name, phone, password_hash, role, created_at, updated_at) VALUES (?, 'Agent3', '09120000004', 'h', 'AGENT', ?, ?)`, agentID, time.Now(), time.Now()).Error)
 
 	input := domain.SubmitApplicationInput{
-		TaskID:          task.ID,
+		TaskPublicID:    task.PublicID,
 		AgentID:         agentID,
 		ProposalMessage: "پیشنهاد اول",
 	}
@@ -135,7 +135,7 @@ func TestApplicationAccept(t *testing.T) {
 
 	price := int64(750000)
 	app, err := appSvc.Submit(context.Background(), domain.SubmitApplicationInput{
-		TaskID:          task.ID,
+		TaskPublicID:    task.PublicID,
 		AgentID:         agentID,
 		ProposalMessage: "قبول می‌کنم",
 		ProposedPrice:   &price,
@@ -156,7 +156,7 @@ func TestApplicationWithdraw(t *testing.T) {
 	require.NoError(t, db.Exec(`INSERT INTO users (id, full_name, phone, password_hash, role, created_at, updated_at) VALUES (?, 'WithdrawAgent', '09120000006', 'h', 'AGENT', ?, ?)`, agentID, time.Now(), time.Now()).Error)
 
 	app, err := appSvc.Submit(context.Background(), domain.SubmitApplicationInput{
-		TaskID:          task.ID,
+		TaskPublicID:    task.PublicID,
 		AgentID:         agentID,
 		ProposalMessage: "پیشنهاد می‌دهم",
 	})

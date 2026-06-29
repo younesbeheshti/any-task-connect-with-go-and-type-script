@@ -85,11 +85,12 @@ function TaskDetails() {
   );
 
   const fee = Math.round(task.budget * 0.08);
-  const isOpen = task.status === "OPEN";
-  const isAssigned = task.status === "ASSIGNED";
-  const isInProgress = task.status === "IN_PROGRESS";
-  const isCompleted = task.status === "COMPLETED";
-  const isWaiting = task.status === "WAITING_FOR_VERIFICATION";
+  // Backend returns API-status values (TaskStatus.APIStatus()), not domain enums.
+  const isOpen = task.status === "awaiting_applicants" || task.status === "posted";
+  const isAssigned = task.status === "accepted";
+  const isInProgress = task.status === "in_progress";
+  const isCompleted = task.status === "completed";
+  const isWaiting = task.status === "awaiting_verification";
 
   return (
     <div className="space-y-6">
@@ -103,20 +104,19 @@ function TaskDetails() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="font-mono">{task.id.slice(0, 8)}</span>
+                  <span className="font-mono">{task.id}</span>
                   {task.createdAt && <><span>·</span><span>ثبت {task.createdAt.slice(0, 10)}</span></>}
-                  {task.requester && <><span>·</span><span>توسط {task.requester.fullName}</span></>}
                 </div>
                 <h1 className="mt-2 text-2xl font-bold tracking-tight">{task.title}</h1>
               </div>
               <StatusBadge status={task.status} />
             </div>
             <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
-              {task.city && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" />{task.city.title}</span>}
+              {task.city && <span className="inline-flex items-center gap-1.5"><MapPin className="h-4 w-4" />{task.city}</span>}
               {task.deadline && <span className="inline-flex items-center gap-1.5"><Clock className="h-4 w-4" />مهلت: {task.deadline.slice(0, 10)}</span>}
               <span className="inline-flex items-center gap-1.5"><Wallet className="h-4 w-4 text-primary" /><span className="font-semibold text-foreground">{toman(task.budget)}</span></span>
-              {task.category && <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-xs">{task.category.title}</span>}
-              <span className="inline-flex items-center gap-1.5"><Users className="h-4 w-4" />{toFa(task.applicantCount ?? 0)} متقاضی</span>
+              {task.category && <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5 text-xs">{task.category}</span>}
+              <span className="inline-flex items-center gap-1.5"><Users className="h-4 w-4" />{toFa(task.applicantsCount ?? 0)} متقاضی</span>
             </div>
             {task.description && <p className="mt-5 text-sm leading-relaxed text-foreground/90">{task.description}</p>}
           </div>
@@ -137,19 +137,19 @@ function TaskDetails() {
               </button>
             )}
             {role === "agent" && isAssigned && (
-              <button onClick={() => doAction("start", "کار شروع شد", "IN_PROGRESS")} disabled={acting}
+              <button onClick={() => doAction("start", "کار شروع شد", "in_progress")} disabled={acting}
                 className="inline-flex items-center gap-2 rounded-lg gradient-brand px-5 py-2.5 text-sm font-semibold text-white shadow-soft hover:opacity-95 disabled:opacity-60">
                 <Play className="h-4 w-4" /> {acting ? "..." : "شروع کار"}
               </button>
             )}
             {role === "agent" && isInProgress && (
-              <button onClick={() => doAction("complete", "کار تکمیل شد", "COMPLETED")} disabled={acting}
+              <button onClick={() => doAction("complete", "کار تکمیل شد", "completed")} disabled={acting}
                 className="inline-flex items-center gap-2 rounded-lg gradient-brand px-5 py-2.5 text-sm font-semibold text-white shadow-soft hover:opacity-95 disabled:opacity-60">
                 <CheckCircle2 className="h-4 w-4" /> {acting ? "..." : "اعلام اتمام کار"}
               </button>
             )}
             {role === "requester" && (isCompleted || isWaiting) && (
-              <button onClick={() => doAction("verify", "تایید شد — پرداخت انجام می‌شود", "VERIFIED")} disabled={acting}
+              <button onClick={() => doAction("verify", "تایید شد — پرداخت انجام می‌شود", "paid")} disabled={acting}
                 className="inline-flex items-center gap-2 rounded-lg gradient-brand px-5 py-2.5 text-sm font-semibold text-white shadow-soft hover:opacity-95 disabled:opacity-60">
                 <ShieldCheck className="h-4 w-4" /> {acting ? "..." : "تایید و پرداخت"}
               </button>
@@ -157,11 +157,11 @@ function TaskDetails() {
             {role === "requester" && isOpen && (
               <Link to="/app/tasks/$id/applications" params={{ id }}
                 className="inline-flex items-center gap-2 rounded-lg border px-5 py-2.5 text-sm font-semibold hover:bg-accent">
-                <Users className="h-4 w-4" /> بررسی متقاضیان ({toFa(task.applicantCount ?? 0)})
+                <Users className="h-4 w-4" /> بررسی متقاضیان ({toFa(task.applicantsCount ?? 0)})
               </Link>
             )}
             {(role === "requester" || role === "admin") && (isOpen || isAssigned) && (
-              <button onClick={() => doAction("cancel", "درخواست لغو شد", "CANCELLED")} disabled={acting}
+              <button onClick={() => doAction("cancel", "درخواست لغو شد", "cancelled")} disabled={acting}
                 className="inline-flex items-center gap-2 rounded-lg border border-destructive/40 px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 disabled:opacity-60">
                 <XCircle className="h-4 w-4" /> {acting ? "..." : "لغو درخواست"}
               </button>
@@ -188,16 +188,16 @@ function TaskDetails() {
             </div>
           </div>
 
-          {task.assignedAgent && (
+          {task.assignedAgentId && (
             <div className="rounded-2xl border bg-card p-5 shadow-soft">
               <h3 className="font-semibold">مجری تخصیص‌یافته</h3>
               <div className="mt-3 flex items-center gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-full gradient-brand text-sm font-bold text-white">
-                  {task.assignedAgent.fullName.slice(0, 2)}
+                  <CheckCircle2 className="h-5 w-5" />
                 </span>
                 <div>
-                  <div className="font-medium">{task.assignedAgent.fullName}</div>
-                  <div className="text-xs text-muted-foreground">مجری</div>
+                  <div className="font-medium">مجری انتخاب شد</div>
+                  <div className="text-xs text-muted-foreground">کار به یک مجری واگذار شده است</div>
                 </div>
               </div>
             </div>

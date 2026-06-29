@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -141,8 +142,31 @@ func (h *Handler) List(c *gin.Context) {
 		}
 	}
 	if statusStr := c.Query("status"); statusStr != "" {
-		s := domain.TaskStatus(statusStr)
-		filter.Status = &s
+		// status may be a comma-separated list (e.g. "VERIFIED,PAID"). Validate each
+		// value and drop unknown ones so the DB never sees an invalid enum literal.
+		for _, raw := range strings.Split(statusStr, ",") {
+			raw = strings.TrimSpace(raw)
+			if raw == "" {
+				continue
+			}
+			if s, ok := domain.ParseStatus(raw); ok {
+				filter.Statuses = append(filter.Statuses, s)
+			}
+		}
+	}
+	if c.Query("mine") == "true" {
+		if idStr := c.GetString(middleware.UserIDKey); idStr != "" {
+			if id, err := uuid.Parse(idStr); err == nil {
+				filter.Mine = &id
+			}
+		}
+	}
+	if c.Query("assigned") == "true" {
+		if idStr := c.GetString(middleware.UserIDKey); idStr != "" {
+			if id, err := uuid.Parse(idStr); err == nil {
+				filter.AgentID = &id
+			}
+		}
 	}
 	if minStr := c.Query("minBudget"); minStr != "" {
 		if v, err := strconv.ParseInt(minStr, 10, 64); err == nil {

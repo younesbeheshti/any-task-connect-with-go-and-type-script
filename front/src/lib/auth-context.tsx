@@ -17,6 +17,8 @@ type RegisterInput = {
   password: string;
   role: "requester" | "agent";
   email?: string;
+  cityId?: string;
+  nationalId?: string;
 };
 
 type AuthState = {

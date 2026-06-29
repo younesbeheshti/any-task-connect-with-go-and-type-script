@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -62,9 +61,6 @@ func NewAuthService(
 
 // Register creates a new user account.
 func (s *AuthService) Register(ctx context.Context, input authdomain.RegisterInput) (*authdomain.TokenPair, *userdomain.User, error) {
-
-	log.Println("input", input)
-
 	normalized, err := phone.Normalize(input.Phone)
 	if err != nil {
 		return nil, nil, apperrors.Validation(map[string]string{"phone": "شماره موبایل معتبر نیست"})
@@ -73,7 +69,21 @@ func (s *AuthService) Register(ctx context.Context, input authdomain.RegisterInp
 		return nil, nil, apperrors.Validation(map[string]string{"role": "نقش انتخاب شده معتبر نیست"})
 	}
 
-	log.Println("normalized", normalized)
+	// Agents must provide city + national ID for identity verification before they
+	// can take on tasks. Their account is created with verification_status "pending"
+	// for an admin to review.
+	if input.Role == common.RoleAgent {
+		fields := map[string]string{}
+		if input.CityID == nil {
+			fields["cityId"] = "انتخاب شهر برای انجام‌دهنده الزامی است"
+		}
+		if input.NationalID == nil || *input.NationalID == "" {
+			fields["nationalId"] = "کد ملی برای انجام‌دهنده الزامی است"
+		}
+		if len(fields) > 0 {
+			return nil, nil, apperrors.Validation(fields)
+		}
+	}
 
 	if _, err := s.users.GetByPhone(ctx, normalized); err == nil {
 		return nil, nil, apperrors.New("CONFLICT", "این شماره موبایل قبلاً ثبت شده است", 409, common.ErrDuplicate)
@@ -86,17 +96,13 @@ func (s *AuthService) Register(ctx context.Context, input authdomain.RegisterInp
 		return nil, nil, err
 	}
 
-	log.Println("hash", hash)
-
 	user := &userdomain.User{
 		ID: uuid.New(), FullName: input.FullName, Phone: normalized,
 		Email: input.Email, PasswordHash: hash, Role: input.Role,
+		CityID: input.CityID, NationalID: input.NationalID,
 		IsActive: true, VerificationLevel: "none", VerificationStatus: "pending",
 		CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(),
 	}
-
-	log.Println("user", user)
-	log.Println("what is happenning here?")
 
 	if err := s.users.Create(ctx, user); err != nil {
 		if errors.Is(err, common.ErrDuplicate) {

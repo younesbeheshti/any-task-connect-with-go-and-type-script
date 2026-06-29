@@ -59,10 +59,11 @@ function Marketplace() {
     if (sort === "budget") params.set("sort", "budget");
     if (sort === "deadline") params.set("sort", "deadline");
     if (role === "requester") params.set("mine", "true");
+    if (role === "agent") params.set("status", "OPEN");
     fetch(`${API_BASE}/v1/tasks?${params}`, { headers: h })
       .then(r => r.json())
       .then(d => {
-        setTasks(d.tasks ?? []);
+        setTasks(d.items ?? []);
         setTotal(d.total ?? 0);
       })
       .catch(() => {})

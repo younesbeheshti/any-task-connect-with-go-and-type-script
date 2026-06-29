@@ -32,6 +32,20 @@ var ValidTransitions = map[TaskStatus][]TaskStatus{
 	TaskStatusVerified:               {TaskStatusPaid},
 }
 
+// validStatuses is the set of known task statuses, used to reject bad input before
+// it reaches the DB (the status column is a Postgres enum and rejects unknown values).
+var validStatuses = map[TaskStatus]bool{
+	TaskStatusCreated: true, TaskStatusOpen: true, TaskStatusAssigned: true,
+	TaskStatusInProgress: true, TaskStatusCompleted: true, TaskStatusWaitingForVerification: true,
+	TaskStatusVerified: true, TaskStatusPaid: true, TaskStatusCancelled: true,
+}
+
+// ParseStatus validates a raw status string against the known domain statuses.
+func ParseStatus(s string) (TaskStatus, bool) {
+	ts := TaskStatus(s)
+	return ts, validStatuses[ts]
+}
+
 // APIStatus maps domain status to frontend contract values.
 func (s TaskStatus) APIStatus() string {
 	switch s {
@@ -134,13 +148,16 @@ type TaskFilter struct {
 	CityTitle   string
 	CategoryID  *uuid.UUID
 	CatTitle    string
-	Status      *TaskStatus
+	Statuses    []TaskStatus
 	Query       string
 	Sort        string // newest, budget, deadline
 	MinBudget   *int64
 	MaxBudget   *int64
 	RequesterID *uuid.UUID
 	AgentID     *uuid.UUID
+	// Mine, when set, restricts results to tasks where the user is the requester
+	// OR the assigned agent (used by the "my tasks" views).
+	Mine *uuid.UUID
 }
 
 // EscrowInfo returned on task creation.

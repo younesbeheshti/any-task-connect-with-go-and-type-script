@@ -44,7 +44,7 @@ function Admin() {
       fetch(`${API_BASE}/v1/tasks?page=1&pageSize=8`, { headers: h }).then(r => r.json()).catch(() => null),
     ]).then(([m, t]) => {
       if (m && !m.error) setMetrics(m);
-      if (t) setTasks(t.tasks ?? []);
+      if (t) setTasks(t.items ?? []);
     }).finally(() => setLoading(false));
   }, []);
 

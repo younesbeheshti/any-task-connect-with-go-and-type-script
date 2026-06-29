@@ -55,3 +55,7 @@ server:
 
 platform:
   commission_percent: 8
+
+storage:
+  local_dir: ./uploads
+  max_size: 52428800

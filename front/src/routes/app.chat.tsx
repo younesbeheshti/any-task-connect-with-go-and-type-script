@@ -1,9 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Send, Search, CheckCheck, MessagesSquare } from "lucide-react";
+import { Send, Search, CheckCheck, MessagesSquare, Paperclip, X, FileText } from "lucide-react";
 import { toFa } from "@/lib/fa";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { FileUploader, type UploadedFile } from "@/components/file-uploader";
 
 export const Route = createFileRoute("/app/chat")({
   head: () => ({ meta: [{ title: "گفت‌وگوها — تسک‌بریج" }] }),
@@ -22,8 +23,11 @@ type ChatSummary = {
   unread: number; online: boolean; time: string;
 };
 
+type Attachment = { id: string; url: string; mime: string; name: string; size: number };
+
 type Message = {
   id: string; from: string; text: string; time: string; seen: boolean;
+  attachment?: Attachment | null;
 };
 
 function Chat() {
@@ -32,6 +36,8 @@ function Chat() {
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
+  const [pendingAttachment, setPendingAttachment] = useState<Attachment | null>(null);
+  const [showUploader, setShowUploader] = useState(false);
   const [sending, setSending] = useState(false);
   const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
@@ -69,6 +75,7 @@ function Chat() {
           text: m.text || m.message || "",
           time: m.createdAt?.slice(11, 16) ?? "",
           seen: m.readAt != null,
+          attachment: m.attachments ?? m.attachment ?? null,
         }));
         setMessages(msgs);
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
@@ -85,17 +92,21 @@ function Chat() {
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault();
-    if (!draft.trim() || !activeTaskId) return;
+    if ((!draft.trim() && !pendingAttachment) || !activeTaskId) return;
     const token = getToken();
     if (!token) return;
 
-    const activeChat = chats.find(c => c.taskId === activeTaskId);
+    const attachment = pendingAttachment;
     setSending(true);
     try {
       const res = await fetch(`${API_BASE}/v1/tasks/${activeTaskId}/messages`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify({ message: draft, receiverId: "00000000-0000-0000-0000-000000000000" }),
+        body: JSON.stringify({
+          message: draft,
+          receiverId: "00000000-0000-0000-0000-000000000000",
+          ...(attachment ? { attachment } : {}),
+        }),
       });
       const data = await res.json();
       if (res.ok) {
@@ -103,8 +114,11 @@ function Chat() {
           id: data.id, from: "me", text: draft,
           time: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
           seen: false,
+          attachment,
         }]);
         setDraft("");
+        setPendingAttachment(null);
+        setShowUploader(false);
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
       }
     } catch {} finally {
@@ -207,7 +221,8 @@ function Chat() {
                         "max-w-[75%] rounded-2xl px-4 py-2.5 text-sm shadow-soft",
                         me ? "rounded-bl-md gradient-brand text-white" : "rounded-br-md bg-muted"
                       )}>
-                        <div className="whitespace-pre-wrap">{m.text}</div>
+                        {m.attachment && <AttachmentView attachment={m.attachment} me={me} />}
+                        {m.text && <div className="whitespace-pre-wrap">{m.text}</div>}
                         <div className={cn("mt-1 flex items-center justify-start gap-1 text-[10px]",
                           me ? "text-white/80" : "text-muted-foreground")}>
                           {m.time}
@@ -222,13 +237,36 @@ function Chat() {
             </div>
 
             <form onSubmit={sendMessage} className="border-t p-3">
+              {showUploader && !pendingAttachment && (
+                <div className="mb-2">
+                  <FileUploader
+                    multiple={false}
+                    onChange={(files) => { if (files[0]) { setPendingAttachment(files[0]); setShowUploader(false); } }}
+                  />
+                </div>
+              )}
+              {pendingAttachment && (
+                <div className="mb-2 flex items-center gap-2 rounded-lg border bg-card px-3 py-2 text-sm">
+                  <FileText className="h-4 w-4 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1 truncate">{pendingAttachment.name}</span>
+                  <button type="button" onClick={() => setPendingAttachment(null)}
+                    className="shrink-0 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="حذف پیوست">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
               <div className="flex items-end gap-2 rounded-2xl border bg-background p-2 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20">
+                <button type="button" onClick={() => setShowUploader(v => !v)}
+                  className={cn("grid h-9 w-9 place-items-center rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground", showUploader && "bg-accent text-foreground")}
+                  aria-label="افزودن پیوست">
+                  <Paperclip className="h-4 w-4" />
+                </button>
                 <input
                   value={draft} onChange={e => setDraft(e.target.value)}
                   placeholder="پیام خود را بنویسید…"
                   className="flex-1 bg-transparent px-2 py-2 text-sm outline-none"
                 />
-                <button type="submit" disabled={sending || !draft.trim()}
+                <button type="submit" disabled={sending || (!draft.trim() && !pendingAttachment)}
                   className="inline-flex h-9 items-center gap-1.5 rounded-lg gradient-brand px-4 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-50">
                   <Send className="h-4 w-4" /> ارسال
                 </button>
@@ -238,5 +276,44 @@ function Chat() {
         )}
       </section>
     </div>
+  );
+}
+
+/** Renders a chat attachment. Downloads are auth-protected, so we fetch with the
+ *  Bearer token and open the result as a blob URL rather than a plain link. */
+function AttachmentView({ attachment, me }: { attachment: Attachment; me: boolean }) {
+  const [busy, setBusy] = useState(false);
+
+  async function open() {
+    const token = getToken();
+    if (!token) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`${API_BASE}${attachment.url}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      window.open(objectUrl, "_blank");
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={open}
+      disabled={busy}
+      className={cn(
+        "mb-1.5 flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-start text-xs transition-colors disabled:opacity-60",
+        me ? "bg-white/15 hover:bg-white/25" : "bg-background hover:bg-accent"
+      )}
+    >
+      <FileText className="h-4 w-4 shrink-0" />
+      <span className="min-w-0 flex-1 truncate font-medium">{attachment.name}</span>
+    </button>
   );
 }

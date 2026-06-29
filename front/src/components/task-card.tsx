@@ -29,12 +29,15 @@ export function TaskCard({ task, showApply = false }: { task: ApiTask; showApply
 
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
         {task.city && (
-          <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{task.city.title}</span>
+          <span className="inline-flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5" />{task.city}</span>
         )}
         {task.deadline && (
           <span className="inline-flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" />مهلت: {task.deadline.slice(0, 10)}</span>
         )}
-        <span className="inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />{toFa(task.applicantCount ?? 0)} متقاضی</span>
+        {task.category && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2 py-0.5">{task.category}</span>
+        )}
+        <span className="inline-flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />{toFa(task.applicantsCount ?? 0)} متقاضی</span>
         <span className="ms-auto inline-flex items-center gap-1.5 rounded-lg bg-primary/10 px-2 py-1 text-sm font-semibold text-primary">
           <Wallet className="h-3.5 w-3.5" />{toman(task.budget)}
         </span>

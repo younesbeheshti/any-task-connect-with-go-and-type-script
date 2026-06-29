@@ -1,10 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Calendar, MapPin, Tag, Wallet, FileText, Upload, Info, ShieldCheck } from "lucide-react";
+import { Calendar, MapPin, Tag, Wallet, FileText, Info, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { toman, toFa } from "@/lib/fa";
 import { cn } from "@/lib/utils";
 import type { ApiCategory, ApiCity } from "@/lib/types";
+import { FileUploader, type UploadedFile } from "@/components/file-uploader";
 
 export const Route = createFileRoute("/app/tasks/new")({
   head: () => ({ meta: [{ title: "ثبت درخواست جدید — تسک‌بریج" }] }),
@@ -25,6 +26,7 @@ function NewTask() {
   const [cityId, setCityId] = useState("");
   const [budget, setBudget] = useState(750000);
   const [deadline, setDeadline] = useState("");
+  const [attachments, setAttachments] = useState<UploadedFile[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   const [categories, setCategories] = useState<ApiCategory[]>([]);
@@ -61,6 +63,7 @@ function NewTask() {
     try {
       const body: Record<string, unknown> = { title, description: desc, budget, categoryId: catId, cityId };
       if (deadline) body.deadline = deadline;
+      if (attachments.length > 0) body.attachmentUrls = attachments.map((a) => a.url);
       const res = await fetch(`${API_BASE}/v1/tasks`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -152,12 +155,9 @@ function NewTask() {
 
         <div>
           <label className="text-sm font-medium">پیوست‌ها</label>
-          <label className="mt-1.5 flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-background py-8 text-sm text-muted-foreground hover:border-primary/40 hover:bg-accent">
-            <Upload className="h-5 w-5" />
-            <span>فایل‌ها را اینجا رها کنید یا کلیک کنید</span>
-            <span className="text-xs">PDF، JPG، PNG — حداکثر {toFa(10)} مگابایت</span>
-            <input type="file" multiple className="hidden" />
-          </label>
+          <div className="mt-1.5">
+            <FileUploader onChange={setAttachments} />
+          </div>
         </div>
 
         <div className="flex justify-end gap-2">

@@ -8,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/application/domain"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/common"
+	taskdomain "github.com/younesbeheshti/any-task-connect/backend/internal/task/domain"
 	"gorm.io/gorm"
 )
 
@@ -80,7 +81,9 @@ func (r *GormRepository) ListByTask(ctx context.Context, taskID uuid.UUID) ([]do
 
 func (r *GormRepository) ListByAgent(ctx context.Context, agentID uuid.UUID) ([]domain.Application, error) {
 	var models []ApplicationModel
-	if err := r.db.WithContext(ctx).Where("agent_id = ?", agentID).Order("created_at desc").Find(&models).Error; err != nil {
+	if err := r.db.WithContext(ctx).
+		Preload("Task").Preload("Task.City").
+		Where("agent_id = ?", agentID).Order("created_at desc").Find(&models).Error; err != nil {
 		return nil, err
 	}
 	return toSlice(models), nil
@@ -110,7 +113,7 @@ func (r *GormRepository) CountByTask(ctx context.Context, taskID uuid.UUID) (int
 }
 
 func toDomain(m ApplicationModel) *domain.Application {
-	return &domain.Application{
+	app := &domain.Application{
 		ID:                     m.ID,
 		TaskID:                 m.TaskID,
 		AgentID:                m.AgentID,
@@ -122,6 +125,28 @@ func toDomain(m ApplicationModel) *domain.Application {
 		CreatedAt:              m.CreatedAt,
 		UpdatedAt:              m.UpdatedAt,
 	}
+	// Populated only when the Agent association was preloaded (ListByTask/GetByID).
+	if m.Agent.ID != uuid.Nil {
+		app.Agent = &domain.AgentSummary{
+			ID:             m.Agent.ID,
+			FullName:       m.Agent.FullName,
+			Rating:         m.Agent.Rating,
+			CompletedCount: m.Agent.CompletedTasks,
+			IsVerified:     m.Agent.IsVerified,
+		}
+	}
+	// Populated only when the Task association was preloaded (ListByAgent).
+	if m.Task.ID != uuid.Nil {
+		app.Task = &domain.TaskSummary{
+			ID:       m.Task.PublicID,
+			Title:    m.Task.Title,
+			Budget:   m.Task.Budget,
+			City:     m.Task.City.Title,
+			Deadline: m.Task.Deadline.Format("2006-01-02"),
+			Status:   taskdomain.TaskStatus(m.Task.Status).APIStatus(),
+		}
+	}
+	return app
 }
 
 func toSlice(models []ApplicationModel) []domain.Application {

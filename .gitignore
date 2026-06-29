@@ -19,6 +19,9 @@ dist-ssr
 # Backend secrets
 backend/.env
 
+# Uploaded files (local storage)
+backend/uploads/
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
@@ -37,3 +40,5 @@ CLAUDE.md
 s.txt
 /prompts
 /graphify-out
+# Claude Code agent worktrees
+.claude/worktrees/
