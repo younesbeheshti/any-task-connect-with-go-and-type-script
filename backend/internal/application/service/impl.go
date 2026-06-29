@@ -96,6 +96,20 @@ func (s *ApplicationService) ListByAgent(ctx context.Context, agentID uuid.UUID)
 	return s.repo.ListByAgent(ctx, agentID)
 }
 
+// AgentIDsForTask returns the IDs of agents who applied to a task. Used by the
+// task service to notify applicants when a task is cancelled.
+func (s *ApplicationService) AgentIDsForTask(ctx context.Context, taskID uuid.UUID) ([]uuid.UUID, error) {
+	apps, err := s.repo.ListByTask(ctx, taskID)
+	if err != nil {
+		return nil, err
+	}
+	ids := make([]uuid.UUID, 0, len(apps))
+	for _, a := range apps {
+		ids = append(ids, a.AgentID)
+	}
+	return ids, nil
+}
+
 func (s *ApplicationService) Accept(ctx context.Context, applicationID, requesterID uuid.UUID) (*domain.Application, error) {
 	app, err := s.repo.GetByID(ctx, applicationID)
 	if errors.Is(err, common.ErrNotFound) {

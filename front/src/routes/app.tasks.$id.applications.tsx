@@ -57,6 +57,8 @@ function ApplicationsReviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [accepting, setAccepting] = useState<string | null>(null);
+  // The applicant pending an assignment confirmation, if any.
+  const [confirmApp, setConfirmApp] = useState<Application | null>(null);
 
   useEffect(() => {
     const token = getToken();
@@ -83,11 +85,14 @@ function ApplicationsReviewPage() {
         method: "POST", headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) { const d = await res.json(); throw new Error(d?.error?.message ?? "خطا"); }
-      toast.success("مجری پذیرفته شد");
+      toast.success("مجری پذیرفته شد و کار به او واگذار شد");
+      // Accepting one applicant assigns the task and rejects the rest.
       setApps(prev => prev.map(a =>
         a.id === appId ? { ...a, status: "ACCEPTED" } :
         a.status === "PENDING" ? { ...a, status: "REJECTED" } : a
       ));
+      setTask(prev => prev ? { ...prev, status: "accepted" } : prev);
+      setConfirmApp(null);
     } catch (e: any) {
       toast.error(e.message ?? "خطا در پذیرش مجری");
     } finally {
@@ -112,6 +117,9 @@ function ApplicationsReviewPage() {
 
   const pending = apps.filter(a => a.status === "PENDING");
   const others = apps.filter(a => a.status !== "PENDING");
+  // Once any applicant is accepted (or the task is assigned), no further
+  // assignment is possible — mirror the backend's single-agent rule in the UI.
+  const assigned = apps.some(a => a.status === "ACCEPTED") || task?.status === "accepted";
 
   if (loading) return <Skeleton />;
   if (error) return <ErrBox msg={error} />;
@@ -144,7 +152,7 @@ function ApplicationsReviewPage() {
             <section>
               <h2 className="mb-4 font-display font-semibold">در انتظار بررسی ({toFa(pending.length)})</h2>
               <div className="space-y-4">
-                {pending.map(a => <ApplicantCard key={a.id} app={a} onAccept={accept} onReject={reject} accepting={accepting} taskBudget={task?.budget ?? 0} />)}
+                {pending.map(a => <ApplicantCard key={a.id} app={a} taskId={id} onAccept={setConfirmApp} onReject={reject} accepting={accepting} assigned={assigned} taskBudget={task?.budget ?? 0} />)}
               </div>
             </section>
           )}
@@ -152,21 +160,59 @@ function ApplicationsReviewPage() {
             <section>
               <h2 className="mb-4 font-display font-semibold text-muted-foreground">بررسی‌شده ({toFa(others.length)})</h2>
               <div className="space-y-4">
-                {others.map(a => <ApplicantCard key={a.id} app={a} onAccept={accept} onReject={reject} accepting={accepting} taskBudget={task?.budget ?? 0} />)}
+                {others.map(a => <ApplicantCard key={a.id} app={a} taskId={id} onAccept={setConfirmApp} onReject={reject} accepting={accepting} assigned={assigned} taskBudget={task?.budget ?? 0} />)}
               </div>
             </section>
           )}
         </div>
       )}
+
+      {confirmApp && (
+        <ConfirmAssign
+          app={confirmApp}
+          busy={accepting === confirmApp.id}
+          onCancel={() => setConfirmApp(null)}
+          onConfirm={() => accept(confirmApp.id)}
+        />
+      )}
     </div>
   );
 }
 
-function ApplicantCard({ app, onAccept, onReject, accepting, taskBudget }: {
+function ConfirmAssign({ app, busy, onCancel, onConfirm }: {
+  app: Application; busy: boolean; onCancel: () => void; onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <button className="absolute inset-0 bg-black/40" onClick={onCancel} aria-label="بستن" />
+      <div className="relative w-full max-w-md rounded-2xl border bg-card p-6 shadow-elevated">
+        <h3 className="text-lg font-bold">واگذاری کار به این مجری؟</h3>
+        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
+          با تایید، کار به <span className="font-semibold text-foreground">{app.agent?.fullName ?? "این مجری"}</span> واگذار می‌شود،
+          سایر درخواست‌ها رد شده و امکان ثبت درخواست جدید بسته خواهد شد. این عمل قابل بازگشت نیست.
+        </p>
+        <div className="mt-6 flex justify-end gap-2">
+          <button onClick={onCancel} disabled={busy}
+            className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-accent disabled:opacity-60">
+            انصراف
+          </button>
+          <button onClick={onConfirm} disabled={busy}
+            className="inline-flex items-center gap-1.5 rounded-lg gradient-brand px-4 py-2 text-sm font-semibold text-white shadow-soft disabled:opacity-60">
+            {busy ? "در حال واگذاری..." : <><CheckCircle2 className="h-4 w-4" /> تایید و واگذاری</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ApplicantCard({ app, taskId, onAccept, onReject, accepting, assigned, taskBudget }: {
   app: Application;
-  onAccept: (id: string) => void;
+  taskId: string;
+  onAccept: (app: Application) => void;
   onReject: (id: string) => void;
   accepting: string | null;
+  assigned: boolean;
   taskBudget: number;
 }) {
   const agent = app.agent ?? {};
@@ -221,18 +267,19 @@ function ApplicantCard({ app, onAccept, onReject, accepting, taskBudget }: {
       {isPending && (
         <div className="mt-4 flex gap-2 border-t pt-4">
           <button
-            onClick={() => onAccept(app.id)}
-            disabled={accepting === app.id}
+            onClick={() => onAccept(app)}
+            disabled={accepting === app.id || assigned}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-lg gradient-brand py-2 text-sm font-semibold text-white shadow-soft disabled:opacity-60"
           >
-            {accepting === app.id ? "در حال پردازش..." : <><CheckCircle2 className="h-4 w-4" /> پذیرفتن</>}
+            {accepting === app.id ? "در حال پردازش..." : <><CheckCircle2 className="h-4 w-4" /> انتخاب و واگذاری</>}
           </button>
-          <Link to="/app/chat" className="flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium hover:border-primary hover:text-primary">
+          <Link to="/app/chat" search={{ task: taskId }} className="flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium hover:border-primary hover:text-primary">
             <MessagesSquare className="h-4 w-4" /> گفت‌وگو
           </Link>
           <button
             onClick={() => onReject(app.id)}
-            className="flex items-center gap-1.5 rounded-lg border border-destructive/40 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+            disabled={assigned}
+            className="flex items-center gap-1.5 rounded-lg border border-destructive/40 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
           >
             <X className="h-4 w-4" /> رد
           </button>

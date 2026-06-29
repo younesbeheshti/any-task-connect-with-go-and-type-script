@@ -1,12 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Send, Search, CheckCheck, MessagesSquare, Paperclip, X, FileText } from "lucide-react";
+import { toast } from "sonner";
 import { toFa } from "@/lib/fa";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { FileUploader, type UploadedFile } from "@/components/file-uploader";
 
 export const Route = createFileRoute("/app/chat")({
+  // `task` (a public task id) opens that conversation directly, e.g. from a task page.
+  validateSearch: (search: Record<string, unknown>): { task?: string } => ({
+    task: typeof search.task === "string" ? search.task : undefined,
+  }),
   head: () => ({ meta: [{ title: "گفت‌وگوها — تسک‌بریج" }] }),
   component: Chat,
 });
@@ -32,6 +37,7 @@ type Message = {
 
 function Chat() {
   const { user } = useAuth();
+  const { task: taskParam } = Route.useSearch();
   const [chats, setChats] = useState<ChatSummary[]>([]);
   const [activeTaskId, setActiveTaskId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -42,30 +48,77 @@ function Chat() {
   const [loadingChats, setLoadingChats] = useState(true);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  // Signature/count of the last-rendered thread, so polling skips redundant
+  // re-renders and only auto-scrolls when genuinely new messages arrive.
+  const msgSigRef = useRef<string>("");
+  const msgCountRef = useRef<number>(0);
 
+  function isAtBottom() {
+    const el = scrollRef.current;
+    if (!el) return true;
+    return el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }
+  function scrollToBottom(smooth = true) {
+    bottomRef.current?.scrollIntoView({ behavior: smooth ? "smooth" : "auto" });
+  }
+
+  // Maps the API conversation list to the sidebar shape. Keeps a placeholder for
+  // a task opened with no messages yet, and zeroes the active chat's unread.
+  function applyChats(raw: any[], active: string | null): ChatSummary[] {
+    const list: ChatSummary[] = (raw ?? []).map((c: any) => ({
+      id: c.id, taskId: c.taskId, name: c.name || c.taskId,
+      last: c.last || "", unread: c.taskId === active ? 0 : (c.unread || 0),
+      online: c.online ?? false, time: c.time?.slice(11, 16) ?? "",
+    }));
+    if (taskParam && !list.some(c => c.taskId === taskParam)) {
+      list.unshift({ id: taskParam, taskId: taskParam, name: `درخواست ${taskParam}`, last: "", unread: 0, online: false, time: "" });
+    }
+    return list;
+  }
+
+  function loadChats(active: string | null) {
+    const token = getToken();
+    if (!token) return;
+    fetch(`${API_BASE}/v1/chats`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => setChats(applyChats(d.chats ?? [], active)))
+      .catch(() => {});
+  }
+
+  // Initial load: conversations, then open the requested/first one.
   useEffect(() => {
     const token = getToken();
     if (!token) { setLoadingChats(false); return; }
     fetch(`${API_BASE}/v1/chats`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(d => {
-        const list: ChatSummary[] = (d.chats ?? []).map((c: any) => ({
-          id: c.id, taskId: c.taskId, name: c.name || c.taskId?.slice(0, 8),
-          last: c.lastMessage || "", unread: c.unread || 0,
-          online: c.online ?? false, time: c.updatedAt?.slice(11, 16) ?? "",
-        }));
-        setChats(list);
-        if (list.length > 0) openChat(list[0].taskId);
+        const initial = taskParam ?? ((d.chats ?? []).length > 0 ? d.chats[0].taskId : null);
+        setChats(applyChats(d.chats ?? [], initial));
+        if (initial) openChat(initial);
       })
       .catch(() => {})
       .finally(() => setLoadingChats(false));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskParam]);
 
-  function openChat(taskId: string) {
-    setActiveTaskId(taskId);
-    setLoadingMsgs(true);
+  // Poll the active thread + conversation list every 5s.
+  useEffect(() => {
+    if (!activeTaskId) return;
+    const t = setInterval(() => {
+      fetchThread(activeTaskId, false);
+      loadChats(activeTaskId);
+    }, 5000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTaskId]);
+
+  // Fetches the thread. `force` (explicit open) always replaces + scrolls to the
+  // bottom; polling only re-renders on real changes and preserves scroll position.
+  function fetchThread(taskId: string, force: boolean) {
     const token = getToken();
     if (!token) return;
+    const wasAtBottom = isAtBottom();
     fetch(`${API_BASE}/v1/tasks/${taskId}/messages`, { headers: { Authorization: `Bearer ${token}` } })
       .then(r => r.json())
       .then(d => {
@@ -77,16 +130,40 @@ function Chat() {
           seen: m.readAt != null,
           attachment: m.attachments ?? m.attachment ?? null,
         }));
+        const sig = msgs.map(m => `${m.id}:${m.seen ? 1 : 0}`).join("|");
+        if (!force && sig === msgSigRef.current) return;
+        const grew = msgs.length > msgCountRef.current;
+        msgSigRef.current = sig;
+        msgCountRef.current = msgs.length;
         setMessages(msgs);
-        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+        if (force || (wasAtBottom && grew)) {
+          setTimeout(() => scrollToBottom(!force), 50);
+        }
+        // New incoming messages while the chat is open → mark them read.
+        if (msgs.some(m => m.from === "them" && !m.seen)) {
+          fetch(`${API_BASE}/v1/tasks/${taskId}/messages/read`, {
+            method: "POST", headers: { Authorization: `Bearer ${token}` },
+          }).catch(() => {});
+          setChats(prev => prev.map(c => c.taskId === taskId ? { ...c, unread: 0 } : c));
+        }
       })
-      .catch(() => setMessages([]))
-      .finally(() => setLoadingMsgs(false));
+      .catch(() => { if (force) setMessages([]); })
+      .finally(() => { if (force) setLoadingMsgs(false); });
+  }
 
-    // mark read
-    fetch(`${API_BASE}/v1/tasks/${taskId}/messages/read`, {
-      method: "POST", headers: { Authorization: `Bearer ${token}` },
-    }).catch(() => {});
+  function openChat(taskId: string) {
+    setActiveTaskId(taskId);
+    setLoadingMsgs(true);
+    msgSigRef.current = "";
+    msgCountRef.current = 0;
+    fetchThread(taskId, true);
+
+    const token = getToken();
+    if (token) {
+      fetch(`${API_BASE}/v1/tasks/${taskId}/messages/read`, {
+        method: "POST", headers: { Authorization: `Bearer ${token}` },
+      }).catch(() => {});
+    }
     setChats(prev => prev.map(c => c.taskId === taskId ? { ...c, unread: 0 } : c));
   }
 
@@ -104,24 +181,34 @@ function Chat() {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({
           message: draft,
-          receiverId: "00000000-0000-0000-0000-000000000000",
           ...(attachment ? { attachment } : {}),
         }),
       });
       const data = await res.json();
       if (res.ok) {
-        setMessages(prev => [...prev, {
-          id: data.id, from: "me", text: draft,
-          time: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
-          seen: false,
-          attachment,
-        }]);
+        setMessages(prev => {
+          const next = [...prev, {
+            id: data.id, from: "me", text: draft,
+            time: new Date().toLocaleTimeString("fa-IR", { hour: "2-digit", minute: "2-digit" }),
+            seen: false,
+            attachment,
+          }];
+          // Keep the poll signature in sync so the next refresh doesn't re-scroll.
+          msgCountRef.current = next.length;
+          return next;
+        });
         setDraft("");
         setPendingAttachment(null);
         setShowUploader(false);
+        // Surface the now-real conversation in the sidebar list.
+        setChats(prev => prev.map(c => c.taskId === activeTaskId ? { ...c, last: draft || "پیوست" } : c));
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+      } else {
+        toast.error(data?.error?.message ?? "ارسال پیام ناموفق بود");
       }
-    } catch {} finally {
+    } catch {
+      toast.error("خطای شبکه");
+    } finally {
       setSending(false);
     }
   }
@@ -204,7 +291,7 @@ function Chat() {
               </div>
             </header>
 
-            <div className="flex-1 space-y-3 overflow-y-auto p-5">
+            <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-5">
               {loadingMsgs ? (
                 <div className="flex items-center justify-center py-10 text-muted-foreground text-sm">در حال بارگذاری...</div>
               ) : messages.length === 0 ? (

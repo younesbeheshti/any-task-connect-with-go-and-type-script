@@ -59,8 +59,10 @@ func (s TaskStatus) APIStatus() string {
 		return "in_progress"
 	case TaskStatusCompleted:
 		return "completed"
-	case TaskStatusWaitingForVerification, TaskStatusVerified:
+	case TaskStatusWaitingForVerification:
 		return "awaiting_verification"
+	case TaskStatusVerified:
+		return "verified"
 	case TaskStatusPaid:
 		return "paid"
 	case TaskStatusCancelled:

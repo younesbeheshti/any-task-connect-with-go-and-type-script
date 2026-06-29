@@ -20,6 +20,7 @@ const map: Record<string, { label: string; cls: string; dot: string }> = {
   in_progress:              { label: "در حال انجام",    cls: "bg-warning/15 text-warning-foreground border-warning/30",   dot: "bg-warning" },
   completed:                { label: "تکمیل‌شده",       cls: "bg-success/15 text-success-foreground border-success/30",   dot: "bg-success" },
   awaiting_verification:    { label: "در انتظار تایید", cls: "bg-warning/15 text-warning-foreground border-warning/30",   dot: "bg-warning" },
+  verified:                 { label: "تایید‌شده — در انتظار تسویه", cls: "bg-success/15 text-success-foreground border-success/30", dot: "bg-success" },
   paid:                     { label: "پرداخت‌شده",      cls: "bg-success/15 text-success-foreground border-success/30",   dot: "bg-success" },
   cancelled:                { label: "لغو‌شده",         cls: "bg-destructive/10 text-destructive border-destructive/20",  dot: "bg-destructive" },
 };

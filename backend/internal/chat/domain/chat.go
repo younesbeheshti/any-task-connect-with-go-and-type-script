@@ -28,10 +28,11 @@ type Attachment struct {
 	Size int64     `json:"size"`
 }
 
-// ChatSummary is a conversation list item.
+// ChatSummary is a conversation list item. TaskID is the public task id so the
+// chat UI and the task pages share one identifier scheme.
 type ChatSummary struct {
-	ID        uuid.UUID `json:"id"`
-	TaskID    uuid.UUID `json:"taskId"`
+	ID        string    `json:"id"`
+	TaskID    string    `json:"taskId"`
 	Name      string    `json:"name"`
 	LastMessage string  `json:"last"`
 	Unread    int       `json:"unread"`
@@ -39,11 +40,12 @@ type ChatSummary struct {
 	UpdatedAt time.Time `json:"time"`
 }
 
-// SendMessageInput holds message creation data.
+// SendMessageInput holds message creation data. The receiver is derived from the
+// task (the other participant), so callers do not pass it.
 type SendMessageInput struct {
-	TaskID      uuid.UUID
-	SenderID    uuid.UUID
-	ReceiverID  uuid.UUID
-	Message     string
-	Attachment  *Attachment
+	// TaskRef is the task's public id (e.g. "TB-7") or UUID; resolved by the service.
+	TaskRef    string
+	SenderID   uuid.UUID
+	Message    string
+	Attachment *Attachment
 }

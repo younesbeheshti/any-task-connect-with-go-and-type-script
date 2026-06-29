@@ -349,6 +349,26 @@ func (h *Handler) Verify(c *gin.Context) {
 	apiresponse.JSON(c, http.StatusOK, toTaskResponse(updated))
 }
 
+func (h *Handler) ConfirmPayment(c *gin.Context) {
+	agentID, err := currentUserID(c)
+	if err != nil {
+		apiresponse.WriteError(c, err)
+		return
+	}
+	publicID := c.Param("id")
+	task, err := h.svc.GetByPublicID(c.Request.Context(), publicID, nil)
+	if err != nil {
+		apiresponse.WriteError(c, err)
+		return
+	}
+	updated, err := h.svc.ConfirmPayment(c.Request.Context(), task.ID, agentID)
+	if err != nil {
+		apiresponse.WriteError(c, err)
+		return
+	}
+	apiresponse.JSON(c, http.StatusOK, toTaskResponse(updated))
+}
+
 func (h *Handler) GetTimeline(c *gin.Context) {
 	publicID := c.Param("id")
 	task, err := h.svc.GetByPublicID(c.Request.Context(), publicID, nil)

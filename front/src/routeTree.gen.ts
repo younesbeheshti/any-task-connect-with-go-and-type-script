@@ -34,6 +34,7 @@ import { Route as AppTasksIdRouteImport } from './routes/app.tasks.$id'
 import { Route as AppAdminUsersRouteImport } from './routes/app.admin.users'
 import { Route as AppAdminReportsRouteImport } from './routes/app.admin.reports'
 import { Route as AppAdminFinanceRouteImport } from './routes/app.admin.finance'
+import { Route as AppTasksIdIndexRouteImport } from './routes/app.tasks.$id.index'
 import { Route as AppTasksIdApplicationsRouteImport } from './routes/app.tasks.$id.applications'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -161,6 +162,11 @@ const AppAdminFinanceRoute = AppAdminFinanceRouteImport.update({
   path: '/finance',
   getParentRoute: () => AppAdminRoute,
 } as any)
+const AppTasksIdIndexRoute = AppTasksIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppTasksIdRoute,
+} as any)
 const AppTasksIdApplicationsRoute = AppTasksIdApplicationsRouteImport.update({
   id: '/applications',
   path: '/applications',
@@ -194,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/tasks/': typeof AppTasksIndexRoute
   '/app/tasks/$id/applications': typeof AppTasksIdApplicationsRoute
+  '/app/tasks/$id/': typeof AppTasksIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -215,11 +222,11 @@ export interface FileRoutesByTo {
   '/app/admin/finance': typeof AppAdminFinanceRoute
   '/app/admin/reports': typeof AppAdminReportsRoute
   '/app/admin/users': typeof AppAdminUsersRoute
-  '/app/tasks/$id': typeof AppTasksIdRouteWithChildren
   '/app/tasks/new': typeof AppTasksNewRoute
   '/app/admin': typeof AppAdminIndexRoute
   '/app/tasks': typeof AppTasksIndexRoute
   '/app/tasks/$id/applications': typeof AppTasksIdApplicationsRoute
+  '/app/tasks/$id': typeof AppTasksIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -249,6 +256,7 @@ export interface FileRoutesById {
   '/app/admin/': typeof AppAdminIndexRoute
   '/app/tasks/': typeof AppTasksIndexRoute
   '/app/tasks/$id/applications': typeof AppTasksIdApplicationsRoute
+  '/app/tasks/$id/': typeof AppTasksIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -279,6 +287,7 @@ export interface FileRouteTypes {
     | '/app/admin/'
     | '/app/tasks/'
     | '/app/tasks/$id/applications'
+    | '/app/tasks/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -300,11 +309,11 @@ export interface FileRouteTypes {
     | '/app/admin/finance'
     | '/app/admin/reports'
     | '/app/admin/users'
-    | '/app/tasks/$id'
     | '/app/tasks/new'
     | '/app/admin'
     | '/app/tasks'
     | '/app/tasks/$id/applications'
+    | '/app/tasks/$id'
   id:
     | '__root__'
     | '/'
@@ -333,6 +342,7 @@ export interface FileRouteTypes {
     | '/app/admin/'
     | '/app/tasks/'
     | '/app/tasks/$id/applications'
+    | '/app/tasks/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -520,6 +530,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminFinanceRouteImport
       parentRoute: typeof AppAdminRoute
     }
+    '/app/tasks/$id/': {
+      id: '/app/tasks/$id/'
+      path: '/'
+      fullPath: '/app/tasks/$id/'
+      preLoaderRoute: typeof AppTasksIdIndexRouteImport
+      parentRoute: typeof AppTasksIdRoute
+    }
     '/app/tasks/$id/applications': {
       id: '/app/tasks/$id/applications'
       path: '/applications'
@@ -550,10 +567,12 @@ const AppAdminRouteWithChildren = AppAdminRoute._addFileChildren(
 
 interface AppTasksIdRouteChildren {
   AppTasksIdApplicationsRoute: typeof AppTasksIdApplicationsRoute
+  AppTasksIdIndexRoute: typeof AppTasksIdIndexRoute
 }
 
 const AppTasksIdRouteChildren: AppTasksIdRouteChildren = {
   AppTasksIdApplicationsRoute: AppTasksIdApplicationsRoute,
+  AppTasksIdIndexRoute: AppTasksIdIndexRoute,
 }
 
 const AppTasksIdRouteWithChildren = AppTasksIdRoute._addFileChildren(

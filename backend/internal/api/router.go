@@ -125,6 +125,7 @@ func RegisterRoutes(r *gin.Engine, h *Handlers, auth *authservice.AuthService) {
 	protected.POST("/tasks/:id/start", h.Task.Start)
 	protected.POST("/tasks/:id/complete", h.Task.Complete)
 	protected.POST("/tasks/:id/verify", h.Task.Verify)
+	protected.POST("/tasks/:id/paid", h.Task.ConfirmPayment)
 
 	// Task reviews (auth required to post).
 	protected.POST("/tasks/:id/reviews", h.Rating.Create)

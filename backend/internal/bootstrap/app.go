@@ -170,7 +170,7 @@ func Run() error {
 
 	withdrawSvc := withdrawservice.NewWithdrawService(withdrawRepo, walletRepo, db.DB, publisher)
 
-	chatSvc := chatservice.NewChatService(chatRepo)
+	chatSvc := chatservice.NewChatService(chatRepo, taskRepo)
 	notifSvc := notifservice.NewNotificationService(notifRepo)
 	ratingSvc := ratingservice.NewReviewService(ratingRepo)
 	adminSvc := adminservice.NewAdminService(userRepo, txRepo, db.DB)
@@ -178,6 +178,9 @@ func Run() error {
 
 	// Wire wallet service into task service.
 	taskSvc.SetWalletService(walletSvc)
+	// Wire notification + applicant lookup so cancelling a task can notify agents.
+	taskSvc.SetNotifier(notifSvc)
+	taskSvc.SetApplicantSource(appSvc)
 
 	v := validator.New()
 

@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { CheckCircle2, MapPin, Clock, Wallet, Star } from "lucide-react";
+import { CheckCircle2, MapPin, Clock, Wallet, Star, XCircle } from "lucide-react";
 import { toman, toFa } from "@/lib/fa";
 import { useRole } from "@/components/role-context";
 
 export const Route = createFileRoute("/app/completed")({
-  head: () => ({ meta: [{ title: "تکمیل‌شده‌ها — تسک‌بریج" }] }),
+  head: () => ({ meta: [{ title: "تاریخچه — تسک‌بریج" }] }),
   component: CompletedPage,
 });
 
@@ -32,7 +32,8 @@ function CompletedPage() {
   useEffect(() => {
     const token = getToken();
     if (!token) { setError("لطفاً وارد شوید"); setLoading(false); return; }
-    fetch(`${API_BASE}/v1/tasks?status=VERIFIED,PAID&mine=true`, {
+    // History: finished (verified/paid) plus cancelled requests.
+    fetch(`${API_BASE}/v1/tasks?status=VERIFIED,PAID,CANCELLED&mine=true`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())
@@ -41,7 +42,7 @@ function CompletedPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  const title = role === "agent" ? "درخواست‌های تکمیل‌شده من" : "درخواست‌های تکمیل‌شده";
+  const title = role === "agent" ? "تاریخچه کارهای من" : "تاریخچه درخواست‌ها";
 
   if (loading) return <Skeleton />;
   if (error) return <ErrBox msg={error} />;
@@ -50,42 +51,53 @@ function CompletedPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-        <p className="text-sm text-muted-foreground">{toFa(tasks.length)} درخواست تکمیل‌شده</p>
+        <p className="text-sm text-muted-foreground">{toFa(tasks.length)} مورد در تاریخچه</p>
       </div>
 
       {tasks.length === 0 ? (
         <div className="rounded-2xl border bg-card p-12 text-center shadow-soft">
           <CheckCircle2 className="mx-auto h-12 w-12 text-muted-foreground/40" />
-          <h3 className="mt-4 font-semibold">درخواست تکمیل‌شده‌ای ندارید</h3>
-          <p className="mt-1 text-sm text-muted-foreground">درخواست‌های تایید‌شده اینجا نمایش داده می‌شوند.</p>
+          <h3 className="mt-4 font-semibold">تاریخچه‌ای ندارید</h3>
+          <p className="mt-1 text-sm text-muted-foreground">درخواست‌های تکمیل‌شده و لغوشده اینجا نمایش داده می‌شوند.</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {tasks.map(t => (
-            <div key={t.id} className="rounded-2xl border bg-card p-5 shadow-soft space-y-3">
-              <div className="flex items-start justify-between gap-2">
-                <h3 className="font-semibold line-clamp-2">{t.title}</h3>
-                <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
-                  <CheckCircle2 className="h-3 w-3" /> تکمیل‌شده
-                </span>
+          {tasks.map(t => {
+            const cancelled = t.status === "cancelled";
+            return (
+              <div key={t.id} className="rounded-2xl border bg-card p-5 shadow-soft space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-semibold line-clamp-2">{t.title}</h3>
+                  {cancelled ? (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-destructive/10 px-2 py-0.5 text-xs font-medium text-destructive">
+                      <XCircle className="h-3 w-3" /> لغو شده
+                    </span>
+                  ) : (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-xs font-medium text-success">
+                      <CheckCircle2 className="h-3 w-3" /> تکمیل‌شده
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{t.city}</span>
+                  <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{t.deadline?.slice(0, 10)}</span>
+                  <span className="flex items-center gap-1 text-primary font-medium"><Wallet className="h-3 w-3" />{toman(t.budget)}</span>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <Link to="/app/tasks/$id" params={{ id: t.id }}
+                    className="flex-1 rounded-lg border py-1.5 text-center text-xs font-medium hover:border-primary hover:text-primary">
+                    مشاهده جزئیات
+                  </Link>
+                  {!cancelled && role === "requester" && (
+                    <Link to="/app/tasks/$id" params={{ id: t.id }}
+                      className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium hover:border-primary hover:text-primary">
+                      <Star className="h-3.5 w-3.5" /> ثبت نظر
+                    </Link>
+                  )}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{t.city}</span>
-                <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{t.deadline?.slice(0, 10)}</span>
-                <span className="flex items-center gap-1 text-primary font-medium"><Wallet className="h-3 w-3" />{toman(t.budget)}</span>
-              </div>
-              <div className="flex gap-2 pt-1">
-                <Link to="/app/tasks/$id" params={{ id: t.id }}
-                  className="flex-1 rounded-lg border py-1.5 text-center text-xs font-medium hover:border-primary hover:text-primary">
-                  مشاهده جزئیات
-                </Link>
-                <Link to="/app/tasks/$id" params={{ id: t.id }}
-                  className="flex items-center gap-1 rounded-lg border px-3 py-1.5 text-xs font-medium hover:border-primary hover:text-primary">
-                  <Star className="h-3.5 w-3.5" /> ثبت نظر
-                </Link>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

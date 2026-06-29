@@ -15,4 +15,7 @@ type Repository interface {
 	MarkSeen(ctx context.Context, taskID, receiverID uuid.UUID) error
 	CountUnread(ctx context.Context, userID uuid.UUID) (int, error)
 	ListChatsForUser(ctx context.Context, userID uuid.UUID) ([]domain.ChatSummary, error)
+	// LatestCounterparty returns the other participant of the user's most recent
+	// message in a task, if any (used to resolve the reply recipient).
+	LatestCounterparty(ctx context.Context, taskID, userID uuid.UUID) (uuid.UUID, bool, error)
 }

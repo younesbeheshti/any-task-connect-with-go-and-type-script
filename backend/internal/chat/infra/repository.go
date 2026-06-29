@@ -99,7 +99,7 @@ func (r *GormRepository) CountUnread(ctx context.Context, userID uuid.UUID) (int
 func (r *GormRepository) ListChatsForUser(ctx context.Context, userID uuid.UUID) ([]domain.ChatSummary, error) {
 	// Fetch distinct task conversations the user is part of, with latest message.
 	type row struct {
-		TaskID      uuid.UUID `gorm:"column:task_id"`
+		PublicID    string    `gorm:"column:public_id"`
 		LastMessage string    `gorm:"column:last_message"`
 		Unread      int       `gorm:"column:unread"`
 		UpdatedAt   time.Time `gorm:"column:updated_at"`
@@ -108,7 +108,7 @@ func (r *GormRepository) ListChatsForUser(ctx context.Context, userID uuid.UUID)
 	var rows []row
 	err := r.db.WithContext(ctx).Raw(`
 		SELECT
-			cm.task_id,
+			t.public_id,
 			(SELECT message FROM chat_messages WHERE task_id = cm.task_id ORDER BY created_at DESC LIMIT 1) AS last_message,
 			(SELECT COUNT(*) FROM chat_messages WHERE task_id = cm.task_id AND receiver_id = ? AND seen = false) AS unread,
 			(SELECT created_at FROM chat_messages WHERE task_id = cm.task_id ORDER BY created_at DESC LIMIT 1) AS updated_at,
@@ -117,7 +117,7 @@ func (r *GormRepository) ListChatsForUser(ctx context.Context, userID uuid.UUID)
 		JOIN tasks t ON t.id = cm.task_id
 		WHERE (cm.sender_id = ? OR cm.receiver_id = ?)
 		  AND cm.deleted_at IS NULL
-		GROUP BY cm.task_id, t.title
+		GROUP BY cm.task_id, t.public_id, t.title
 		ORDER BY updated_at DESC
 		LIMIT 50
 	`, userID, userID, userID).Scan(&rows).Error
@@ -127,8 +127,8 @@ func (r *GormRepository) ListChatsForUser(ctx context.Context, userID uuid.UUID)
 	out := make([]domain.ChatSummary, len(rows))
 	for i, rw := range rows {
 		out[i] = domain.ChatSummary{
-			ID:          rw.TaskID,
-			TaskID:      rw.TaskID,
+			ID:          rw.PublicID,
+			TaskID:      rw.PublicID,
 			Name:        rw.TaskTitle,
 			LastMessage: rw.LastMessage,
 			Unread:      rw.Unread,
@@ -136,4 +136,30 @@ func (r *GormRepository) ListChatsForUser(ctx context.Context, userID uuid.UUID)
 		}
 	}
 	return out, nil
+}
+
+func (r *GormRepository) LatestCounterparty(ctx context.Context, taskID, userID uuid.UUID) (uuid.UUID, bool, error) {
+	// Scan into a string field: GORM mishandles scanning a single uuid column
+	// straight into a bare uuid.UUID ([16]byte) value.
+	var row struct {
+		Peer string `gorm:"column:peer"`
+	}
+	err := r.db.WithContext(ctx).Raw(`
+		SELECT CASE WHEN sender_id = ? THEN receiver_id ELSE sender_id END AS peer
+		FROM chat_messages
+		WHERE task_id = ? AND (sender_id = ? OR receiver_id = ?) AND deleted_at IS NULL
+		ORDER BY created_at DESC
+		LIMIT 1
+	`, userID, taskID, userID, userID).Scan(&row).Error
+	if err != nil {
+		return uuid.Nil, false, err
+	}
+	if row.Peer == "" {
+		return uuid.Nil, false, nil
+	}
+	peer, err := uuid.Parse(row.Peer)
+	if err != nil || peer == uuid.Nil {
+		return uuid.Nil, false, nil
+	}
+	return peer, true, nil
 }

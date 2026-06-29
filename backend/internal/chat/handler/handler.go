@@ -9,7 +9,6 @@ import (
 	"github.com/younesbeheshti/any-task-connect/backend/internal/chat/service"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/common/middleware"
 	"github.com/younesbeheshti/any-task-connect/backend/pkg/apiresponse"
-	apperrors "github.com/younesbeheshti/any-task-connect/backend/pkg/errors"
 )
 
 type Handler struct {
@@ -23,11 +22,7 @@ func NewHandler(svc service.Service) *Handler {
 // GET /tasks/:id/messages
 func (h *Handler) ListMessages(c *gin.Context) {
 	userID := mustUserID(c)
-	taskID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		apiresponse.WriteError(c, apperrors.New("INVALID_ID", "شناسه نامعتبر است", 400, apperrors.ErrValidation))
-		return
-	}
+	taskRef := c.Param("id")
 	var before *uuid.UUID
 	if raw := c.Query("before"); raw != "" {
 		id, err := uuid.Parse(raw)
@@ -36,7 +31,7 @@ func (h *Handler) ListMessages(c *gin.Context) {
 		}
 	}
 	limit := 50
-	msgs, err := h.svc.ListMessages(c.Request.Context(), taskID, userID, before, limit)
+	msgs, err := h.svc.ListMessages(c.Request.Context(), taskRef, userID, before, limit)
 	if err != nil {
 		apiresponse.WriteError(c, err)
 		return
@@ -47,13 +42,8 @@ func (h *Handler) ListMessages(c *gin.Context) {
 // POST /tasks/:id/messages
 func (h *Handler) SendMessage(c *gin.Context) {
 	userID := mustUserID(c)
-	taskID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		apiresponse.WriteError(c, apperrors.New("INVALID_ID", "شناسه نامعتبر است", 400, apperrors.ErrValidation))
-		return
-	}
+	taskRef := c.Param("id")
 	var req struct {
-		ReceiverID string             `json:"receiverId" binding:"required"`
 		Message    string             `json:"message"`
 		Attachment *domain.Attachment `json:"attachment"`
 	}
@@ -61,15 +51,11 @@ func (h *Handler) SendMessage(c *gin.Context) {
 		apiresponse.WriteError(c, err)
 		return
 	}
-	receiverID, err := uuid.Parse(req.ReceiverID)
-	if err != nil {
-		apiresponse.WriteError(c, apperrors.New("INVALID_ID", "شناسه گیرنده نامعتبر است", 400, apperrors.ErrValidation))
-		return
-	}
+	// Receiver is derived from the task (the other participant); the client only
+	// supplies the message/attachment.
 	msg, err := h.svc.SendMessage(c.Request.Context(), domain.SendMessageInput{
-		TaskID:     taskID,
+		TaskRef:    taskRef,
 		SenderID:   userID,
-		ReceiverID: receiverID,
 		Message:    req.Message,
 		Attachment: req.Attachment,
 	})
@@ -94,12 +80,8 @@ func (h *Handler) ListChats(c *gin.Context) {
 // POST /tasks/:id/messages/read
 func (h *Handler) MarkRead(c *gin.Context) {
 	userID := mustUserID(c)
-	taskID, err := uuid.Parse(c.Param("id"))
-	if err != nil {
-		apiresponse.WriteError(c, apperrors.New("INVALID_ID", "شناسه نامعتبر است", 400, apperrors.ErrValidation))
-		return
-	}
-	if err := h.svc.MarkRead(c.Request.Context(), taskID, userID); err != nil {
+	taskRef := c.Param("id")
+	if err := h.svc.MarkRead(c.Request.Context(), taskRef, userID); err != nil {
 		apiresponse.WriteError(c, err)
 		return
 	}

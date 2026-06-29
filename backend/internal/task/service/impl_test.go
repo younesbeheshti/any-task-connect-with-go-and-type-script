@@ -182,7 +182,7 @@ func TestTaskAPIStatus(t *testing.T) {
 		{domain.TaskStatusInProgress, "in_progress"},
 		{domain.TaskStatusCompleted, "completed"},
 		{domain.TaskStatusWaitingForVerification, "awaiting_verification"},
-		{domain.TaskStatusVerified, "awaiting_verification"},
+		{domain.TaskStatusVerified, "verified"},
 		{domain.TaskStatusPaid, "paid"},
 		{domain.TaskStatusCancelled, "cancelled"},
 	}

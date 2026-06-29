@@ -3,10 +3,12 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/common"
+	notifdomain "github.com/younesbeheshti/any-task-connect/backend/internal/notification/domain"
 	paymentdomain "github.com/younesbeheshti/any-task-connect/backend/internal/payment/domain"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/task/domain"
 	"github.com/younesbeheshti/any-task-connect/backend/internal/task/repository"
@@ -22,11 +24,25 @@ type WalletService interface {
 	RefundEscrow(ctx context.Context, taskID, requesterID uuid.UUID, amount, fee int64) error
 }
 
+// NotificationCreator creates in-app notifications. Injected post-construction
+// to avoid an import cycle with the notification context.
+type NotificationCreator interface {
+	Create(ctx context.Context, input notifdomain.CreateNotificationInput) (*notifdomain.Notification, error)
+}
+
+// ApplicantSource returns the agents who applied to a task. Injected
+// post-construction to avoid a cycle with the application context.
+type ApplicantSource interface {
+	AgentIDsForTask(ctx context.Context, taskID uuid.UUID) ([]uuid.UUID, error)
+}
+
 // TaskService implements service.Service.
 type TaskService struct {
-	repo      repository.Repository
-	publisher common.Publisher
-	walletSvc WalletService
+	repo       repository.Repository
+	publisher  common.Publisher
+	walletSvc  WalletService
+	notifier   NotificationCreator
+	applicants ApplicantSource
 }
 
 // NewTaskService creates a new TaskService.
@@ -37,6 +53,16 @@ func NewTaskService(repo repository.Repository, publisher common.Publisher) *Tas
 // SetWalletService injects the wallet service after construction to avoid import cycles.
 func (s *TaskService) SetWalletService(ws WalletService) {
 	s.walletSvc = ws
+}
+
+// SetNotifier injects the notification service after construction.
+func (s *TaskService) SetNotifier(n NotificationCreator) {
+	s.notifier = n
+}
+
+// SetApplicantSource injects the application service after construction.
+func (s *TaskService) SetApplicantSource(a ApplicantSource) {
+	s.applicants = a
 }
 
 func (s *TaskService) Create(ctx context.Context, input domain.CreateTaskInput) (*domain.Task, *domain.EscrowInfo, error) {
@@ -195,7 +221,42 @@ func (s *TaskService) Cancel(ctx context.Context, taskID, actorID uuid.UUID) (*d
 		_ = s.walletSvc.RefundEscrow(ctx, task.ID, task.RequesterID, task.Budget, task.EscrowFee)
 	}
 
+	// Let the involved agent(s) know the request was cancelled.
+	s.notifyTaskCancelled(ctx, task)
+
 	return updated, nil
+}
+
+// notifyTaskCancelled best-effort notifies the assigned agent, or — if the task
+// was still open — every agent who had applied, that the task was cancelled.
+func (s *TaskService) notifyTaskCancelled(ctx context.Context, task *domain.Task) {
+	if s.notifier == nil {
+		return
+	}
+	recipients := map[uuid.UUID]struct{}{}
+	if task.AssignedAgentID != nil {
+		recipients[*task.AssignedAgentID] = struct{}{}
+	} else if s.applicants != nil {
+		if ids, err := s.applicants.AgentIDsForTask(ctx, task.ID); err == nil {
+			for _, id := range ids {
+				recipients[id] = struct{}{}
+			}
+		}
+	}
+	if len(recipients) == 0 {
+		return
+	}
+	deepLink := "/app/tasks/" + task.PublicID
+	body := fmt.Sprintf("درخواست «%s» (%s) توسط درخواست‌دهنده لغو شد.", task.Title, task.PublicID)
+	for agentID := range recipients {
+		_, _ = s.notifier.Create(ctx, notifdomain.CreateNotificationInput{
+			UserID:   agentID,
+			Title:    "لغو درخواست",
+			Body:     body,
+			Type:     notifdomain.NotificationTypeSystem,
+			DeepLink: &deepLink,
+		})
+	}
 }
 
 func (s *TaskService) Publish(ctx context.Context, taskID, requesterID uuid.UUID) (*domain.Task, error) {
@@ -223,11 +284,9 @@ func (s *TaskService) Verify(ctx context.Context, taskID, requesterID uuid.UUID)
 		return nil, err
 	}
 
+	// Requester verifies the work → release escrow to the agent. The task stays
+	// at VERIFIED until the agent acknowledges receipt (ConfirmPayment → PAID).
 	updated, transErr := s.Transition(ctx, taskID, domain.TaskStatusVerified, requesterID, "")
-	if transErr != nil {
-		return nil, transErr
-	}
-	updated, transErr = s.Transition(ctx, updated.ID, domain.TaskStatusPaid, requesterID, "")
 	if transErr != nil {
 		return nil, transErr
 	}
@@ -241,6 +300,55 @@ func (s *TaskService) Verify(ctx context.Context, taskID, requesterID uuid.UUID)
 			Fee:         task.EscrowFee,
 		}
 		_ = s.walletSvc.ReleaseEscrow(ctx, releaseInput)
+	}
+
+	// Tell the agent the payment was released so they can confirm receipt.
+	if s.notifier != nil && task.AssignedAgentID != nil {
+		deepLink := "/app/tasks/" + task.PublicID
+		_, _ = s.notifier.Create(ctx, notifdomain.CreateNotificationInput{
+			UserID:   *task.AssignedAgentID,
+			Title:    "پرداخت آزاد شد",
+			Body:     fmt.Sprintf("درخواست «%s» (%s) تایید و مبلغ آزاد شد. لطفاً دریافت وجه را تایید کنید.", task.Title, task.PublicID),
+			Type:     notifdomain.NotificationTypePayment,
+			DeepLink: &deepLink,
+		})
+	}
+
+	return updated, nil
+}
+
+// ConfirmPayment lets the assigned agent acknowledge they received the released
+// payment, moving the task from VERIFIED to its final PAID state.
+func (s *TaskService) ConfirmPayment(ctx context.Context, taskID, agentID uuid.UUID) (*domain.Task, error) {
+	task, err := s.repo.GetByID(ctx, taskID)
+	if errors.Is(err, common.ErrNotFound) {
+		return nil, apperrors.New("NOT_FOUND", "تسک یافت نشد", 404, apperrors.ErrNotFound)
+	}
+	if err != nil {
+		return nil, err
+	}
+	if task.AssignedAgentID == nil || *task.AssignedAgentID != agentID {
+		return nil, apperrors.New("FORBIDDEN", "دسترسی مجاز نیست", 403, apperrors.ErrForbidden)
+	}
+	if task.Status != domain.TaskStatusVerified {
+		return nil, apperrors.New("CONFLICT", "این درخواست در وضعیت تایید‌شده نیست", 409, apperrors.ErrConflict)
+	}
+
+	updated, err := s.Transition(ctx, taskID, domain.TaskStatusPaid, agentID, "دریافت وجه تایید شد")
+	if err != nil {
+		return nil, err
+	}
+
+	// Let the requester know the agent confirmed receipt.
+	if s.notifier != nil {
+		deepLink := "/app/tasks/" + task.PublicID
+		_, _ = s.notifier.Create(ctx, notifdomain.CreateNotificationInput{
+			UserID:   task.RequesterID,
+			Title:    "دریافت وجه تایید شد",
+			Body:     fmt.Sprintf("مجری دریافت وجه درخواست «%s» (%s) را تایید کرد.", task.Title, task.PublicID),
+			Type:     notifdomain.NotificationTypePayment,
+			DeepLink: &deepLink,
+		})
 	}
 
 	return updated, nil

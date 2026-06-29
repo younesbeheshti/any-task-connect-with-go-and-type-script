@@ -31,7 +31,9 @@ function InProgressPage() {
   useEffect(() => {
     const token = getToken();
     if (!token) { setError("لطفاً وارد شوید"); setLoading(false); return; }
-    fetch(`${API_BASE}/v1/tasks?status=ASSIGNED,IN_PROGRESS&mine=true`, {
+    // Includes COMPLETED/WAITING_FOR_VERIFICATION/VERIFIED so the agent keeps the
+    // task until they confirm receipt of payment (VERIFIED → PAID).
+    fetch(`${API_BASE}/v1/tasks?status=ASSIGNED,IN_PROGRESS,COMPLETED,WAITING_FOR_VERIFICATION,VERIFIED&mine=true`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then(r => r.json())

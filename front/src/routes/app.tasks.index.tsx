@@ -34,11 +34,16 @@ function Marketplace() {
   const [catId, setCatId] = useState<string | null>(null);
   const [sort, setSort] = useState<"newest" | "budget" | "deadline">("newest");
 
+  // Per-task chat unread counts (taskId -> count) and the set of tasks the
+  // current agent has already applied to — both drive the task-card UI.
+  const [unreadByTask, setUnreadByTask] = useState<Record<string, number>>({});
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const token = getToken();
-    const h = token ? { Authorization: `Bearer ${token}` } : {};
+    const h: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
     Promise.all([
       fetch(`${API_BASE}/v1/categories`, { headers: h }).then(r => r.json()),
       fetch(`${API_BASE}/v1/cities`, { headers: h }).then(r => r.json()),
@@ -48,9 +53,51 @@ function Marketplace() {
     }).catch(() => {});
   }, []);
 
+  // Unread chat counts per task, refreshed every 5s so card badges stay live.
+  useEffect(() => {
+    const token = getToken();
+    if (!token) return;
+    const h = { Authorization: `Bearer ${token}` };
+    let stop = false;
+    const loadUnread = () => {
+      fetch(`${API_BASE}/v1/chats`, { headers: h })
+        .then(r => r.json())
+        .then(d => {
+          if (stop) return;
+          const map: Record<string, number> = {};
+          for (const c of d.chats ?? []) {
+            if (c.taskId && c.unread > 0) map[c.taskId] = c.unread;
+          }
+          setUnreadByTask(map);
+        })
+        .catch(() => {});
+    };
+    loadUnread();
+    const t = setInterval(loadUnread, 5000);
+    return () => { stop = true; clearInterval(t); };
+  }, []);
+
+  // Tasks the current agent already applied to → drive the "applied" card state.
+  useEffect(() => {
+    const token = getToken();
+    if (!token || role !== "agent") { setAppliedIds(new Set()); return; }
+    fetch(`${API_BASE}/v1/me/applications`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => r.json())
+      .then(d => {
+        const list = d.applications ?? d.items ?? [];
+        const ids = new Set<string>();
+        for (const a of list) {
+          const tid = a.task?.id ?? a.taskId;
+          if (tid) ids.add(tid);
+        }
+        setAppliedIds(ids);
+      })
+      .catch(() => {});
+  }, [role]);
+
   function loadTasks(p = page) {
     const token = getToken();
-    const h = token ? { Authorization: `Bearer ${token}` } : {};
+    const h: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {};
     setLoading(true);
     const params = new URLSearchParams({ page: String(p), pageSize: "12" });
     if (query) params.set("q", query);
@@ -58,7 +105,12 @@ function Marketplace() {
     if (catId) params.set("categoryId", catId);
     if (sort === "budget") params.set("sort", "budget");
     if (sort === "deadline") params.set("sort", "deadline");
-    if (role === "requester") params.set("mine", "true");
+    if (role === "requester") {
+      params.set("mine", "true");
+      // Active requests only — cancelled/paid live in the history page. VERIFIED
+      // stays here until the agent confirms receipt of payment.
+      params.set("status", "OPEN,ASSIGNED,IN_PROGRESS,COMPLETED,WAITING_FOR_VERIFICATION,VERIFIED");
+    }
     if (role === "agent") params.set("status", "OPEN");
     fetch(`${API_BASE}/v1/tasks?${params}`, { headers: h })
       .then(r => r.json())
@@ -152,7 +204,15 @@ function Marketplace() {
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {tasks.map(t => <TaskCard key={t.id} task={t} showApply={role === "agent"} />)}
+          {tasks.map(t => (
+            <TaskCard
+              key={t.id}
+              task={t}
+              showApply={role === "agent"}
+              alreadyApplied={appliedIds.has(t.id)}
+              unread={unreadByTask[t.id] ?? 0}
+            />
+          ))}
         </div>
       )}
 
