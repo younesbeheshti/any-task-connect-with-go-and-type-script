@@ -39,6 +39,7 @@ backend/uploads/
 CLAUDE.md
 s.txt
 /prompts
+/promts
 /graphify-out
-# Claude Code agent worktrees
-.claude/worktrees/
+# Claude Code local config and agent worktrees
+.claude/
